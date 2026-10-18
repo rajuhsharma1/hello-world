@@ -1,11 +1,22 @@
+# The gateway is the only published port. Backends and infrastructure stay internal.
 services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      - booking-service
+      - notification-service
+      - grafana
+      - zipkin
+      - loki
   booking-db:
     image: postgres:17.6
     environment: &db-env
       POSTGRES_DB: spa
       POSTGRES_USER: spa
       POSTGRES_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
-    ports: ["127.0.0.1:5432:5432"]
     volumes: ["booking-data:/var/lib/postgresql/data"]
     healthcheck: &db-health
       test: ["CMD-SHELL", "pg_isready -U spa -d spa"]
@@ -15,7 +26,6 @@ services:
   notification-db:
     image: postgres:17.6
     environment: *db-env
-    ports: ["127.0.0.1:5433:5432"]
     volumes: ["notification-data:/var/lib/postgresql/data"]
     healthcheck: *db-health
   storage-init:
@@ -27,7 +37,6 @@ services:
     depends_on:
       storage-init: {condition: service_completed_successfully}
     image: apache/kafka:3.9.1
-    ports: ["127.0.0.1:9092:9092"]
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -49,11 +58,9 @@ services:
       retries: 20
   zipkin:
     image: openzipkin/zipkin:3.5
-    ports: ["127.0.0.1:9411:9411"]
   loki:
     image: grafana/loki:3.5.7
     command: -config.file=/etc/loki/local-config.yaml
-    ports: ["127.0.0.1:3100:3100"]
     volumes: ["loki-data:/loki"]
   fluent-bit:
     image: fluent/fluent-bit:4.0.11
@@ -66,10 +73,11 @@ services:
     depends_on: [loki]
   grafana:
     image: grafana/grafana:12.2.1
-    ports: ["127.0.0.1:3000:3000"]
     environment:
       NO_PROXY: localhost,127.0.0.1,loki,zipkin
       no_proxy: localhost,127.0.0.1,loki,zipkin
+      GF_SERVER_ROOT_URL: http://localhost:8080/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-spa_dev_only}
     volumes:
@@ -80,7 +88,6 @@ services:
     build:
       context: .
       dockerfile: booking-service/Dockerfile
-    ports: ["127.0.0.1:8080:8080"]
     environment:
       DB_URL: jdbc:postgresql://booking-db:5432/spa
       DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
@@ -96,7 +103,6 @@ services:
     build:
       context: .
       dockerfile: notification-service/Dockerfile
-    ports: ["127.0.0.1:8081:8081"]
     environment:
       DB_URL: jdbc:postgresql://notification-db:5432/spa
       DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}

@@ -1,4 +1,15 @@
+# Development only: publishes infrastructure for host Java processes.
 services:
+  booking-db:
+    ports: ["127.0.0.1:5432:5432"]
+  notification-db:
+    ports: ["127.0.0.1:5433:5432"]
+  kafka:
+    ports: ["127.0.0.1:9092:9092"]
+  zipkin:
+    ports: ["127.0.0.1:9411:9411"]
+  loki:
+    ports: ["127.0.0.1:3100:3100"]
   fluent-bit:
     volumes:
       - ./.runtime/logs:/logs:ro

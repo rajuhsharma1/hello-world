@@ -10,9 +10,17 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
       - run: mvn -B verify
+      - run: npm ci --prefix ui
+      - run: npx --prefix ui playwright install --with-deps chromium
       - run: docker compose up --build -d
       - run: python3 scripts/smoke.py
+      - run: npm test --prefix ui
       - if: failure()
         run: docker compose logs --no-color
       - if: always()

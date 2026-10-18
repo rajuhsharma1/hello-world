@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#294c40" />
+    <title>Stillwater · Spa management</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23294c40'/%3E%3Cpath d='M20 29C8 24 10 15 11 13c6 0 9 5 9 5s3-5 9-5c1 2 3 11-9 16Z' fill='%23e2d6b5'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="Stillwater home"
+        ><svg class="brand-symbol" viewBox="0 0 48 48" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M24 40C12 34 8 24 10 14c8 0 14 6 14 6s6-6 14-6c2 10-2 20-14 26Z"
+          />
+          <path
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            d="M24 36C16 24 17 13 24 5c7 8 8 19 0 31Z"
+          /></svg
+        ><span>stillwater<small>SPA MANAGEMENT</small></span></a
+      >
+      <div class="nav-caption">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <a href="#overview" data-view="overview"
+          ><span aria-hidden="true">◫</span> Overview</a
+        >
+        <a href="#appointments" data-view="appointments"
+          ><span aria-hidden="true">▦</span> Appointments</a
+        >
+        <a href="#notifications" data-view="notifications"
+          ><span aria-hidden="true">◇</span> Confirmations
+          <span class="nav-count" id="nav-count">0</span></a
+        >
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="environment-dot"></span> Local workspace
+        <p>A little calm, behind the scenes.</p>
+        <a href="/grafana/" target="_blank" rel="noopener"
+          >Logs &amp; traces <span aria-hidden="true">↗</span></a
+        >
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div>
+          Workspace <span aria-hidden="true">/</span>
+          <strong id="breadcrumb">Overview</strong>
+        </div>
+        <span class="workspace-label">STILLWATER SPA</span>
+      </header>
+      <main id="main" tabindex="-1">
+        <section class="heading">
+          <div>
+            <p class="eyebrow" id="today"></p>
+            <h1 id="page-title">A calmer way to manage your day.</h1>
+            <p id="page-description">
+              Appointments, people, and the moments in between.
+            </p>
+          </div>
+          <button class="button primary" id="new-booking">
+            <span aria-hidden="true">＋</span> New appointment
+          </button>
+        </section>
+        <div
+          id="service-message"
+          class="banner warning"
+          role="status"
+          hidden
+        ></div>
+        <div id="notice" class="banner success" role="status" hidden></div>
+
+        <section id="overview-view" aria-label="Overview">
+          <div class="stats">
+            <article class="stat">
+              <div class="stat-top">
+                Bookings on this page <span aria-hidden="true">▦</span>
+              </div>
+              <strong id="booking-count">—</strong>
+              <p>Up to 50 scheduled appointments</p>
+            </article>
+            <article class="stat">
+              <div class="stat-top">
+                Upcoming on this page <span aria-hidden="true">◷</span>
+              </div>
+              <strong id="upcoming-count">—</strong>
+              <p>Time to make someone’s day</p>
+            </article>
+            <article class="stat">
+              <div class="stat-top">
+                Recent confirmations <span aria-hidden="true">◇</span>
+              </div>
+              <strong id="confirmation-count">—</strong>
+              <p>Latest 50 confirmation records</p>
+            </article>
+          </div>
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">THE SCHEDULE</p>
+                  <h2>Coming up next</h2>
+                </div>
+                <a class="text-link" href="#appointments"
+                  >View appointments <span aria-hidden="true">↗</span></a
+                >
+              </div>
+              <div id="upcoming-list" class="appointment-list">
+                <p class="empty">Loading your schedule…</p>
+              </div>
+              <div class="panel-footer">
+                Upcoming appointments from the current page, in your local time.
+              </div>
+            </section>
+            <section class="welcome-card">
+              <svg
+                class="decorative-leaf"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+              >
+                <path
+                  fill="currentColor"
+                  d="M24 40C12 34 8 24 10 14c8 0 14 6 14 6s6-6 14-6c2 10-2 20-14 26Z"
+                />
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M24 36C16 24 17 13 24 5c7 8 8 19 0 31Z"
+                />
+              </svg>
+              <p class="eyebrow">SPACE TO SLOW DOWN</p>
+              <h2>Good experiences<br />start with a little care.</h2>
+              <p>
+                Keep the schedule in order, so you can give every guest your
+                full attention.
+              </p>
+              <button class="button light" id="welcome-booking">
+                Make a booking <span aria-hidden="true">↗</span>
+              </button>
+            </section>
+          </div>
+          <section class="panel recent-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">ALL THE LITTLE DETAILS</p>
+                <h2>Recent confirmations</h2>
+              </div>
+              <a class="text-link" href="#notifications"
+                >View all <span aria-hidden="true">↗</span></a
+              >
+            </div>
+            <div id="recent-confirmations"></div>
+          </section>
+        </section>
+
+        <section id="appointments-view" hidden aria-label="Appointments">
+          <div class="panel">
+            <div class="panel-heading table-toolbar">
+              <div>
+                <h2>Your appointments</h2>
+                <p class="muted" id="page-info">Page 1 · Up to 50 records</p>
+              </div>
+              <label class="search"
+                ><span aria-hidden="true">⌕</span
+                ><input
+                  type="search"
+                  id="search"
+                  placeholder="Search this page…"
+                  aria-label="Search appointments on this page" /></label
+              ><button class="button secondary" id="refresh-appointments">
+                Refresh
+              </button>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Guest</th>
+                    <th>Treatment</th>
+                    <th>Therapist</th>
+                    <th>Date &amp; time</th>
+                    <th>Schedule</th>
+                  </tr>
+                </thead>
+                <tbody id="appointments-body"></tbody>
+              </table>
+            </div>
+            <div id="appointments-empty" class="empty" hidden>
+              No appointments yet. Make room for your first guest.
+            </div>
+            <div class="pagination">
+              <span id="result-count" class="muted"></span>
+              <div>
+                <button class="button secondary" id="previous-page">
+                  ← Previous</button
+                ><button class="button secondary" id="next-page">Next →</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="notifications-view" hidden aria-label="Confirmations">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Booking confirmations</h2>
+                <p class="muted">
+                  Stored after your booking is processed. Updates every 10
+                  seconds.
+                </p>
+              </div>
+              <button class="button secondary" id="refresh-notifications">
+                Refresh
+              </button>
+            </div>
+            <div id="all-confirmations"></div>
+            <div class="panel-footer">
+              These are saved confirmation records. Email and SMS delivery are
+              not enabled.
+            </div>
+          </div>
+        </section>
+        <footer class="footer">
+          <span>Thoughtfully scheduled. Beautifully simple.</span
+          ><span id="last-updated">Connecting to your workspace…</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="booking-dialog" aria-labelledby="dialog-title">
+      <form id="booking-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">A MOMENT OF WELLNESS</p>
+            <h2 id="dialog-title">New appointment</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            id="close-dialog"
+            aria-label="Close new appointment"
+          >
+            ✕
+          </button>
+        </div>
+        <p class="muted">Let’s find a little time for your guest.</p>
+        <div id="form-error" class="banner warning" role="alert" hidden></div>
+        <div class="form-grid">
+          <label
+            >Guest name<input
+              name="customerName"
+              autofocus
+              autocomplete="name"
+              maxlength="100"
+              required
+              placeholder="e.g. Alex Morgan"
+          /></label>
+          <label
+            >Email address<input
+              name="customerEmail"
+              type="email"
+              autocomplete="email"
+              maxlength="254"
+              required
+              placeholder="alex@example.com"
+          /></label>
+          <div class="select-field">
+            <label for="treatment">Treatment</label
+            ><select id="treatment" name="treatment" required>
+              <option value="">Choose a treatment</option>
+              <option>Swedish massage</option>
+              <option>Deep tissue massage</option>
+              <option>Restorative facial</option>
+              <option>Aromatherapy</option>
+              <option>Body ritual</option>
+            </select>
+          </div>
+          <label
+            >Therapist<input
+              name="therapist"
+              maxlength="100"
+              required
+              placeholder="Therapist’s name"
+          /></label>
+          <div class="full-width date-field">
+            <label for="starts-at">Date &amp; time</label
+            ><input
+              id="starts-at"
+              name="startsAt"
+              type="datetime-local"
+              aria-describedby="time-help"
+              required
+            /><small id="time-help"
+              >In your local time zone. Choose a future time.</small
+            >
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" id="cancel-booking">
+            Cancel</button
+          ><button class="button primary" type="submit" id="submit-booking">
+            Create appointment
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
