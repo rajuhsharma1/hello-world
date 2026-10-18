@@ -1,6 +1,10 @@
 "use strict";
-(() => {
+(async () => {
+  await window.ArkAppReady;
+  if (!window.Ark) return;
   const { api, el, notice } = window.Ark;
+  const readOnly = window.ArkSession.user.role === "STAFF";
+  document.getElementById("new-contact").hidden = readOnly;
   const $ = (id) => document.getElementById(id);
   const money = (value) =>
     new Intl.NumberFormat("en-IN", {
@@ -534,7 +538,7 @@
         card.append(el("p", "muted", c.address), el("p", "muted", c.notes));
         const button = el("button", "button secondary", "Edit contact");
         button.addEventListener("click", () => contactForm(c));
-        card.append(button);
+        if (!readOnly) card.append(button);
         $("contacts-list").append(card);
       }
     } catch (e) {

@@ -10,7 +10,7 @@ public class OperationsController {
  private final OperationsService service;
  public OperationsController(OperationsService s) {service=s;}
  @GetMapping("/api/operations/settings") public OperationsService.Settings settings() {return service.settings();}
- @GetMapping("/api/staff") public List<Staff> staff() {return service.staff();}
+ @GetMapping("/api/staff") public List<?> staff(org.springframework.security.core.Authentication user) {if(user.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_STAFF")))return service.staff().stream().map(s->java.util.Map.of("id",s.id,"name",s.name,"role",s.role)).toList();return service.staff();}
  @PostMapping("/api/staff") @ResponseStatus(HttpStatus.CREATED) public Staff add(@Valid @RequestBody OperationsService.StaffRequest r) {return service.addStaff(r);}
  @GetMapping("/api/attendance") public List<OperationsService.AttendanceView> attendance(@RequestParam LocalDate date) {return service.attendance(date);}
  @PutMapping("/api/attendance") public OperationsService.AttendanceView attendance(@Valid @RequestBody OperationsService.AttendanceRequest r) {return service.markAttendance(r);}

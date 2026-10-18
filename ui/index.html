@@ -7,11 +7,14 @@
     <title>The Ark Salon &amp; Spa · Spa management</title>
     <link rel="icon" href="/logo.svg" />
     <link rel="stylesheet" href="/styles.css" />
+    <script src="/session.js" defer></script>
     <script src="/app.js" defer></script>
     <script src="/operations.js" defer></script>
     <script src="/administration.js" defer></script>
+    <script src="/security-ui.js" defer></script>
   </head>
-  <body>
+  <body class="auth-pending">
+    <div id="auth-unavailable" class="banner warning" role="alert" hidden></div>
     <a class="skip-link" href="#main">Skip to content</a>
     <aside class="sidebar">
       <a
@@ -51,11 +54,16 @@
         ><a href="#contacts" data-view="contacts"
           ><span aria-hidden="true">☎</span> Emergency contacts</a
         >
+        <a href="#logs" data-view="logs"
+          ><span aria-hidden="true">≡</span> System logs</a
+        ><a href="#users" data-view="users"
+          ><span aria-hidden="true">⚿</span> Access control</a
+        >
       </nav>
       <div class="sidebar-bottom">
         <span class="environment-dot"></span> Local workspace
         <p>A little calm, behind the scenes.</p>
-        <a href="/grafana/" target="_blank" rel="noopener"
+        <a href="#logs" id="sidebar-logs"
           >Logs &amp; traces <span aria-hidden="true">↗</span></a
         >
       </div>
@@ -66,7 +74,20 @@
           Workspace <span aria-hidden="true">/</span>
           <strong id="breadcrumb">Overview</strong>
         </div>
-        <span class="workspace-label">KHARAR · PUNJAB</span>
+        <div class="account-controls">
+          <span class="workspace-label">KHARAR · PUNJAB</span
+          ><button
+            class="account-chip"
+            id="account-menu"
+            title="Change password"
+          >
+            <span class="account-avatar" id="account-initial">A</span
+            ><span
+              ><strong id="account-name"></strong
+              ><small id="account-role"></small
+            ></span></button
+          ><button class="button secondary" id="sign-out">Sign out</button>
+        </div>
       </header>
       <main id="main" tabindex="-1">
         <section class="heading">
@@ -618,6 +639,143 @@
           ></div>
           <div id="contacts-list" class="contacts-grid"></div>
         </section>
+        <section id="logs-view" hidden aria-label="System logs">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">WORKSPACE OBSERVABILITY</p>
+                <h2>Logs &amp; security activity</h2>
+                <p class="muted">
+                  A bounded, read-only view of application logs and
+                  sign-in/account events.
+                </p>
+              </div>
+              <a
+                class="button secondary"
+                href="/grafana/"
+                target="_blank"
+                rel="noopener"
+                >Advanced Grafana ↗</a
+              >
+            </div>
+            <div class="log-filters">
+              <div>
+                <label for="log-source">View</label
+                ><select id="log-source">
+                  <option value="application">Application logs</option>
+                  <option value="audit">Security activity</option>
+                </select>
+              </div>
+              <div>
+                <label for="log-service">Service</label
+                ><select id="log-service">
+                  <option value="ALL">All services</option>
+                  <option>booking-service</option>
+                  <option>notification-service</option>
+                  <option>operations-service</option>
+                  <option>auth-service</option>
+                </select>
+              </div>
+              <div>
+                <label for="log-level">Level</label
+                ><select id="log-level">
+                  <option>ALL</option>
+                  <option>INFO</option>
+                  <option>WARN</option>
+                  <option>ERROR</option>
+                  <option>DEBUG</option>
+                </select>
+              </div>
+              <div>
+                <label for="log-period">Time window</label
+                ><select id="log-period">
+                  <option value="15">Last 15 minutes</option>
+                  <option value="60">Last hour</option>
+                  <option value="1440">Last 24 hours</option>
+                </select>
+              </div>
+              <div class="log-search">
+                <label for="log-search">Message search</label
+                ><input
+                  id="log-search"
+                  maxlength="160"
+                  placeholder="Search log messages"
+                />
+              </div>
+              <div>
+                <label for="log-trace">Trace ID (optional)</label
+                ><input
+                  id="log-trace"
+                  maxlength="32"
+                  pattern="[a-fA-F0-9]{32}"
+                  placeholder="32-character trace ID"
+                />
+              </div>
+              <button class="button primary" id="refresh-logs">
+                Refresh logs</button
+              ><label class="log-auto"
+                ><input type="checkbox" id="log-auto" /> Auto-refresh</label
+              >
+            </div>
+            <div
+              id="log-error"
+              class="banner warning"
+              role="status"
+              hidden
+            ></div>
+            <div id="log-status" class="panel-footer"></div>
+            <div class="table-scroll">
+              <table class="logs-table">
+                <thead id="logs-head"></thead>
+                <tbody id="logs-body"></tbody>
+              </table>
+            </div>
+            <p id="logs-empty" class="empty" hidden>
+              No matching entries in this time window.
+            </p>
+          </div>
+        </section>
+        <section id="users-view" hidden aria-label="Access control">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">OWNER CONTROLS</p>
+                <h2>Workspace accounts</h2>
+                <p class="muted">
+                  Owners manage access. New accounts must change their temporary
+                  password before opening records.
+                </p>
+              </div>
+              <button class="button primary" id="new-account">
+                ＋ Create account
+              </button>
+            </div>
+            <div
+              id="users-error"
+              class="banner warning"
+              role="status"
+              hidden
+            ></div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-body"></tbody>
+              </table>
+            </div>
+            <div class="panel-footer">
+              At least one enabled owner is required. Disabling accounts or
+              resetting passwords ends their sessions. Role changes take effect
+              on subsequent requests.
+            </div>
+          </div>
+        </section>
         <footer class="footer">
           <span>Thoughtfully scheduled. Beautifully simple.</span
           ><span id="last-updated">Connecting to your workspace…</span>
@@ -903,6 +1061,36 @@
             Cancel</button
           ><button class="button primary" type="submit" id="admin-save">
             Save record
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="security-dialog" aria-labelledby="security-title">
+      <form id="security-form">
+        <div class="dialog-heading">
+          <h2 id="security-title"></h2>
+          <button
+            type="button"
+            class="icon-button"
+            id="security-close"
+            aria-label="Close account form"
+          >
+            ✕
+          </button>
+        </div>
+        <p class="muted" id="security-help"></p>
+        <div
+          id="security-error"
+          class="banner warning"
+          role="alert"
+          hidden
+        ></div>
+        <div class="form-grid" id="security-fields"></div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" id="security-cancel">
+            Cancel</button
+          ><button class="button primary" type="submit" id="security-save">
+            Save account
           </button>
         </div>
       </form>

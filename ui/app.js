@@ -1,5 +1,7 @@
 "use strict";
-(() => {
+window.ArkAppReady = (async () => {
+  const session = await window.ArkReady;
+  if (!session) return;
   const $ = (id) => document.getElementById(id);
   const state = {
     appointments: [],
@@ -31,7 +33,7 @@
   async function api(path, options = {}) {
     let response;
     try {
-      response = await fetch(path, {
+      response = await window.ArkSession.fetch(path, {
         ...options,
         signal: AbortSignal.timeout(15000),
         headers: { "Content-Type": "application/json", ...options.headers },
@@ -286,10 +288,59 @@
       "expenses",
       "reports",
       "contacts",
+      "logs",
+      "users",
     ].includes(view)
       ? view
       : "overview";
+    const allowed = {
+      OWNER: [
+        "overview",
+        "appointments",
+        "notifications",
+        "attendance",
+        "sales",
+        "hr",
+        "expenses",
+        "reports",
+        "contacts",
+        "logs",
+        "users",
+      ],
+      ADMIN: [
+        "overview",
+        "appointments",
+        "notifications",
+        "attendance",
+        "sales",
+        "hr",
+        "expenses",
+        "reports",
+        "contacts",
+        "logs",
+      ],
+      STAFF: ["overview", "appointments", "notifications", "sales", "contacts"],
+    }[session.user.role];
+    if (!allowed.includes(current)) {
+      location.hash = "overview";
+      return;
+    }
+    document
+      .querySelectorAll("[data-view]")
+      .forEach((a) => (a.hidden = !allowed.includes(a.dataset.view)));
+    document.getElementById("sidebar-logs").hidden =
+      session.user.role === "STAFF";
     const titles = {
+      logs: [
+        "A clear view behind the scenes.",
+        "Search application logs and review security activity.",
+        "System logs",
+      ],
+      users: [
+        "The right access for every person.",
+        "Manage workspace accounts and permissions.",
+        "Access control",
+      ],
       hr: [
         "Your people, properly documented.",
         "Staff profiles, employment drafts and salary structures.",
@@ -346,6 +397,8 @@
       "expenses",
       "reports",
       "contacts",
+      "logs",
+      "users",
     ])
       $(`${key}-view`).hidden = key !== current;
     document.querySelectorAll("[data-view]").forEach((a) => {

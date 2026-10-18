@@ -1,6 +1,8 @@
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY pom.xml .
+COPY security-common security-common
+COPY auth-service auth-service
 COPY booking-service booking-service
 COPY notification-service notification-service
 COPY operations-service operations-service

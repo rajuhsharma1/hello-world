@@ -4,14 +4,47 @@ services:
     build:
       context: .
       dockerfile: gateway/Dockerfile
+    environment:
+      ARK_INTERNAL_KEY: ${ARK_INTERNAL_KEY:?Run python3 scripts/setup-security.py first}
+      NGINX_ENVSUBST_FILTER: ^ARK_INTERNAL_KEY$
     ports: ["127.0.0.1:8080:8080"]
     depends_on:
+      - auth-service
       - booking-service
       - notification-service
       - operations-service
       - grafana
       - zipkin
       - loki
+  auth-db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: spa
+      POSTGRES_USER: spa
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
+    volumes: ["auth-data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spa -d spa"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://auth-db:5432/spa
+      DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
+      ARK_INTERNAL_KEY: ${ARK_INTERNAL_KEY:?Run python3 scripts/setup-security.py first}
+      ARK_SETUP_TOKEN: ${ARK_SETUP_TOKEN:-}
+      ARK_PUBLIC_ORIGIN: ${ARK_PUBLIC_ORIGIN:-http://localhost:8080}
+      ARK_COOKIE_SECURE: ${ARK_COOKIE_SECURE:-false}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGGING_FILE_NAME: /logs/auth.log
+    volumes: ["app-logs:/logs"]
+    depends_on:
+      storage-init: {condition: service_completed_successfully}
+      auth-db: {condition: service_healthy}
   booking-db:
     image: postgres:17.6
     environment: &db-env
@@ -39,6 +72,8 @@ services:
       context: .
       dockerfile: operations-service/Dockerfile
     environment:
+      ARK_AUTH_URL: http://auth-service:8083
+      ARK_INTERNAL_KEY: ${ARK_INTERNAL_KEY:?Run python3 scripts/setup-security.py first}
       DB_URL: jdbc:postgresql://operations-db:5432/spa
       DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
@@ -99,7 +134,7 @@ services:
       GF_SERVER_ROOT_URL: http://localhost:8080/grafana/
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-spa_dev_only}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?Run python3 scripts/setup-security.py first}
     volumes:
       - ./infra/datasources.yml:/etc/grafana/provisioning/datasources/spa.yml:ro
       - grafana-data:/var/lib/grafana
@@ -109,6 +144,8 @@ services:
       context: .
       dockerfile: booking-service/Dockerfile
     environment:
+      ARK_AUTH_URL: http://auth-service:8083
+      ARK_INTERNAL_KEY: ${ARK_INTERNAL_KEY:?Run python3 scripts/setup-security.py first}
       DB_URL: jdbc:postgresql://booking-db:5432/spa
       DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -124,6 +161,8 @@ services:
       context: .
       dockerfile: notification-service/Dockerfile
     environment:
+      ARK_AUTH_URL: http://auth-service:8083
+      ARK_INTERNAL_KEY: ${ARK_INTERNAL_KEY:?Run python3 scripts/setup-security.py first}
       DB_URL: jdbc:postgresql://notification-db:5432/spa
       DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -135,6 +174,7 @@ services:
       notification-db: {condition: service_healthy}
       kafka: {condition: service_healthy}
 volumes:
+  auth-data:
   operations-data:
   booking-data:
   notification-data:

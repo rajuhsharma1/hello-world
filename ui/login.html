@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#071b30" />
+    <title>Sign in · The Ark Salon &amp; Spa</title>
+    <link rel="icon" href="/logo.svg" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/login.js" defer></script>
+  </head>
+  <body class="login-body">
+    <main class="login-shell">
+      <section class="login-story">
+        <img
+          src="/assets/ark-logo.png"
+          class="login-logo"
+          alt="The Ark Salon &amp; Spa"
+        />
+        <div class="login-story-copy">
+          <p class="eyebrow">YOUR SPACE, CONNECTED</p>
+          <h1>Care for your guests.<br />We’ll keep the day in order.</h1>
+          <p>
+            One workspace for your people, appointments and everyday business.
+          </p>
+          <span class="login-location">CITY HEART · KHARAR, PUNJAB</span>
+        </div>
+        <div class="login-photo-credit">
+          Venue imagery adapted from supplied photographs.
+        </div>
+      </section>
+      <section class="login-panel">
+        <div class="login-status">
+          <span class="environment-dot"></span> THE ARK WORKSPACE
+        </div>
+        <p class="eyebrow">A MOMENT TO CONNECT</p>
+        <h2 id="login-title">Welcome back.</h2>
+        <p id="login-description" class="muted">
+          Sign in to your salon workspace.
+        </p>
+        <div id="login-error" class="banner warning" role="alert" hidden></div>
+        <div
+          id="login-notice"
+          class="banner success"
+          role="status"
+          hidden
+        ></div>
+        <form id="login-form" hidden>
+          <label for="username">Username</label
+          ><input
+            id="username"
+            name="username"
+            autocomplete="username"
+            maxlength="50"
+            required
+            autofocus
+          /><label for="password">Password</label>
+          <div class="password-field">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              maxlength="128"
+              required
+            /><button
+              type="button"
+              id="show-password"
+              aria-label="Show password"
+              aria-pressed="false"
+            >
+              Show
+            </button>
+          </div>
+          <button class="button primary login-submit" type="submit">
+            Sign in
+          </button>
+          <p class="login-help">
+            Need access or a password reset? Contact the salon owner. Repeated
+            failed attempts temporarily lock the account.
+          </p>
+        </form>
+        <form id="setup-form" hidden>
+          <div class="banner warning">
+            One-time owner setup. Run
+            <code>python3 scripts/setup-security.py</code>, then enter the
+            <code>ARK_SETUP_TOKEN</code> from your local <code>.env</code> file.
+            Never share this token.
+          </div>
+          <label for="setup-token">One-time setup token</label
+          ><input
+            id="setup-token"
+            name="setupToken"
+            type="password"
+            autocomplete="off"
+            required
+          /><label for="owner-name">Your full name</label
+          ><input
+            id="owner-name"
+            name="displayName"
+            autocomplete="name"
+            maxlength="100"
+            required
+          /><label for="owner-username">Owner username</label
+          ><input
+            id="owner-username"
+            name="username"
+            pattern="[a-z][a-z0-9._-]{2,49}"
+            autocomplete="username"
+            required
+          /><label for="owner-password">Create owner password</label
+          ><input
+            id="owner-password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            minlength="12"
+            maxlength="128"
+            required
+          /><label for="owner-confirm">Confirm owner password</label
+          ><input
+            id="owner-confirm"
+            type="password"
+            autocomplete="new-password"
+            required
+          /><button class="button primary login-submit" type="submit">
+            Create owner account
+          </button>
+        </form>
+        <form id="change-form" hidden>
+          <div class="banner warning">
+            Your temporary password must be changed before you can access salon
+            records.
+          </div>
+          <label for="current-password">Current temporary password</label
+          ><input
+            id="current-password"
+            name="currentPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+          /><label for="new-password">New password</label
+          ><input
+            id="new-password"
+            name="newPassword"
+            type="password"
+            autocomplete="new-password"
+            minlength="12"
+            maxlength="128"
+            required
+          /><label for="confirm-password">Confirm new password</label
+          ><input
+            id="confirm-password"
+            type="password"
+            autocomplete="new-password"
+            required
+          /><button class="button primary login-submit" type="submit">
+            Change password
+          </button>
+        </form>
+        <p class="login-footnote">
+          Use at least 12 characters. Passwords are not saved by this app. Sign
+          out when using a shared device.
+        </p>
+        <div class="login-footnote">
+          The Ark Salon &amp; Spa · Staff access only
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

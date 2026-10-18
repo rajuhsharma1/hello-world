@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Validate HR records, PDF downloads, complete CSV exports and expense-based P&L."""
 import csv, io, json, os, uuid, urllib.request, urllib.error
+from security_client import authenticated
+SECURITY=authenticated()
 from decimal import Decimal
 base=os.environ.get('SPA_BASE_URL','http://localhost:8080').rstrip('/')
 def raw(path,payload=None,method=None):
     body=None if payload is None else json.dumps(payload).encode()
-    return urllib.request.urlopen(urllib.request.Request(base+path,data=body,method=method,headers={'Content-Type':'application/json'}),timeout=30)
+    return SECURITY.open(urllib.request.Request(base+path,data=body,method=method,headers={'Content-Type':'application/json'}),timeout=30)
 def call(path,payload=None,method=None):
     with raw(path,payload,method) as r:return json.load(r,parse_float=Decimal)
 def reject(path,payload,status,method=None):

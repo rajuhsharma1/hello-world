@@ -33,3 +33,10 @@ logging:
     format:
       console: logstash
       file: logstash
+    json:
+      add:
+        service: ${spring.application.name}
+
+ark:
+  auth-url: ${ARK_AUTH_URL:http://localhost:8083}
+  internal-key: ${ARK_INTERNAL_KEY}

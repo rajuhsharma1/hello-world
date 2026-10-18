@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Exercise the real staff, attendance and sales database through the gateway."""
 import json, os, uuid, urllib.request, urllib.error
+from security_client import authenticated
+SECURITY=authenticated()
 from decimal import Decimal
 base=os.environ.get('SPA_BASE_URL','http://localhost:8080').rstrip('/')
 def call(path,payload=None,method=None):
     body=None if payload is None else json.dumps(payload).encode()
-    with urllib.request.urlopen(urllib.request.Request(base+path,data=body,method=method,headers={'Content-Type':'application/json'}),timeout=15) as response:
+    with SECURITY.open(urllib.request.Request(base+path,data=body,method=method,headers={'Content-Type':'application/json'}),timeout=15) as response:
         return json.load(response,parse_float=Decimal)
 def rejected(path,payload,status,method=None):
     try: call(path,payload,method)

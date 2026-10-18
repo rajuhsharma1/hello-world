@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Run against the running Compose stack; validates persistence and Kafka delivery."""
 import os, json, time, urllib.request, urllib.error, urllib.parse, uuid
+from security_client import authenticated
+SECURITY=authenticated()
 TRACE_ID=uuid.uuid4().hex
 BASE_URL=os.environ.get("SPA_BASE_URL", "http://localhost:8080").rstrip("/")
 from datetime import datetime, timedelta, timezone
 
 def request(url, data=None):
     body=None if data is None else json.dumps(data).encode()
-    with urllib.request.urlopen(urllib.request.Request(url,data=body,headers={"Content-Type":"application/json", **({"traceparent":f"00-{TRACE_ID}-0123456789abcdef-01"} if data is not None else {})}),timeout=10) as response:
+    with SECURITY.open(urllib.request.Request(url,data=body,headers={"Content-Type":"application/json", **({"traceparent":f"00-{TRACE_ID}-0123456789abcdef-01"} if data is not None else {})}),timeout=10) as response:
         return json.load(response)
 for service in ("booking", "notification", "operations"):
     for attempt in range(90):
@@ -17,7 +19,7 @@ for service in ("booking", "notification", "operations"):
         except Exception:
             if attempt==89: raise
             time.sleep(2)
-with urllib.request.urlopen(BASE_URL, timeout=10) as response:
+with SECURITY.open(BASE_URL, timeout=10) as response:
     assert b"The Ark" in response.read(), "UI not served by gateway"
 print("PASS: UI and all service health endpoints served through one gateway")
 payload={"customerName":"Smoke Test","contactNumber":"+919876543213","treatment":"Massage","therapist":str(uuid.uuid4()),"startsAt":(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()}

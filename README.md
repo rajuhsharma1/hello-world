@@ -4,28 +4,29 @@ A spa management backend and responsive browser UI. Java 21 / Spring Boot servic
 
 ## Run locally
 
-Install and start Docker Desktop (or Docker Engine with Compose v2). No host Java, Maven, Node.js, or Python is needed just to run the app.
+Install and start Docker Desktop (or Docker Engine with Compose v2). Python 3 generates local secrets once; Java, Maven and Node.js run inside containers.
 
 ```sh
 git clone --branch feature/spa-management https://github.com/rajuhsharma1/hello-world.git
 cd hello-world
+python3 scripts/setup-security.py
 docker compose up --build -d
 ```
 
-If you already cloned the repository, switch to `feature/spa-management` and pull the latest changes before running Compose. First startup downloads images and Maven dependencies. Wait for all three backend services to finish starting:
+If you already cloned the repository, switch to `feature/spa-management` and pull the latest changes before running Compose. First startup downloads images and Maven dependencies. Wait for the four backend services to finish starting:
 
 ```sh
 docker compose logs -f booking-service notification-service gateway
 ```
 
-Open **http://localhost:8080** in your local browser. Everything you need goes through this one port:
+Open **http://localhost:8080** in your local browser. On first use, create your owner account using `ARK_SETUP_TOKEN` from your private `.env` file. There is no default application username or password. See [SECURITY.md](SECURITY.md) for roles, sessions and deployment settings. Everything you need goes through this one port:
 
 - **Overview:** upcoming bookings and recent confirmation records.
 - **Appointments:** create a future booking, search the current page, browse 50-record pages, and refresh.
 - **Staff attendance:** add staff and record present, absent, or leave for a business date, with check-in/check-out and hours worked.
 - **Daily sales:** register attended client visits, contact numbers, staff, amounts in INR, and UPI/cash/card payments; see daily collection totals by method.
 - **Confirmations:** records saved by the notification service after Kafka processes a booking; refreshes every 10 seconds.
-- **Logs & traces:** the sidebar opens Grafana at `/grafana/`. Development login: `admin` / `spa_dev_only`. Select Loki in Explore and query `{job="spa"}`; select Zipkin to search traces.
+- **System logs:** owners and administrators can filter logs by service, level, time, message and trace ID, and read security audit events. Grafana at `/grafana/` uses its separate generated password from `.env`.
 
 All browser API requests use relative paths on the same origin. No CORS configuration or separate frontend development server is required. The frontend uses plain HTML/CSS/JavaScript; Node is needed only for browser tests.
 
@@ -57,6 +58,8 @@ Only the gateway publishes a host port, bound to `127.0.0.1:8080`. PostgreSQL, K
 
 ## API through the gateway
 
+All examples below require an authenticated session cookie. Mutations also require the session CSRF token and matching Origin header. Use the browser UI or the authenticated smoke-test client as a reference.
+
 ```sh
 curl -i -X POST http://localhost:8080/api/appointments \
   -H 'Content-Type: application/json' \
@@ -87,11 +90,13 @@ UI dates display in the browser's local time zone and are submitted as UTC insta
 
 ## Checks
 
-With Python 3 installed, run the functional check against the running stack:
+On a disposable test deployment only, run `python3 scripts/bootstrap-test-user.py` to create a random test owner. On an existing deployment, provide `ARK_TEST_USERNAME` and `ARK_TEST_PASSWORD` for an authorized test account instead. Tests create sample business records. With Python 3 installed, run:
 
 ```sh
 python3 scripts/smoke.py
 python3 scripts/operations-smoke.py
+python3 scripts/administration-smoke.py
+python3 scripts/security-smoke.py
 ```
 
 It checks the UI and backend health through port 8080, creates and reads a booking, verifies a duplicate returns 409, waits for the Kafka confirmation, checks a trace with a notification consumer span, and finds the appointment log in Loki. Every run creates one test booking. `SPA_BASE_URL` can override the gateway origin.
@@ -128,7 +133,7 @@ For a corporate/cloud network proxy, Docker builds support optional BuildKit sec
 
 ## Development scope and operations
 
-This is an unauthenticated local development starter, not a production deployment. Customer accounts, catalog management, authentication, refunds, cancellations, payroll processing, and SMS delivery are not implemented. Salary/CTC structures and print-ready documents are available; they are not automated payroll. Scheduling prevents identical start times, not overlapping intervals. Do not expose APIs or observability endpoints publicly. Default PostgreSQL/Grafana passwords and plaintext Kafka are for isolated development. Override `DB_PASSWORD` and `GRAFANA_PASSWORD` in an ignored `.env` before first startup if desired. Existing database passwords require an explicit database-user update or new development volumes.
+This is an authenticated local development deployment. Customer accounts, catalog management, refunds, cancellations, payroll processing, and SMS delivery are not implemented. Salary/CTC structures and print-ready documents are available; they are not automated payroll. Scheduling prevents identical start times, not overlapping intervals. Do not expose APIs or observability endpoints publicly. The default PostgreSQL password and plaintext Kafka are for isolated development. Grafana receives a generated password; existing installations require an explicit password reset. Override `DB_PASSWORD` and `GRAFANA_PASSWORD` in an ignored `.env` before first startup if desired. Existing database passwords require an explicit database-user update or new development volumes.
 
 The booking and outbox insert share a transaction. The publisher retries pending events after Kafka failures. Delivery is at least once; a crash between sending and marking sent can cause duplicates. Notification inserts use a unique appointment ID with `ON CONFLICT DO NOTHING`. Malformed events retry indefinitely and require operator intervention. Run one booking-service instance; multiple publishers need database claiming/locking. Long-running deployments need sent-outbox retention.
 
@@ -191,9 +196,9 @@ Use **Emergency contacts** to add or update electricians, plumbers, AC technicia
 - `/api/reports/sales.csv?period=DAY|MONTH|YEAR&date=YYYY-MM-DD` exports a complete period.
 - `/api/reports/profit-loss?date=YYYY-MM-DD` returns the selected calendar month's recorded result; `/api/reports/profit-loss.pdf?date=YYYY-MM-DD&download=true` downloads its PDF.
 
-Run `python3 scripts/administration-smoke.py` after the existing smoke checks. It intentionally creates HR test records, expenses, 52 test sales and a next-month boundary sale on historical dates to verify complete CSV exports and exact P&L changes. Six Playwright tests now include the HR/finance/directory workflows. Twelve backend tests cover outbox/attendance, CTC validation, calendar boundaries, CSV escaping and multi-page PDF content.
+Run `python3 scripts/administration-smoke.py` after the existing smoke checks. It intentionally creates HR test records, expenses, 52 test sales and a next-month boundary sale on historical dates to verify complete CSV exports and exact P&L changes. Eight Playwright tests now include the HR/finance/directory workflows. Sixteen backend tests cover outbox/attendance, CTC validation, calendar boundaries, CSV escaping and multi-page PDF content.
 
-The app still publishes only port **8080**. Pull and run `docker compose up --build -d` to apply the new Flyway migration; do not delete database volumes. Profiles, salary/contract PDFs and CSVs contain confidential information. This remains an unauthenticated, loopback-only development app; add access controls and appropriate data handling before any shared or production use.
+The app still publishes only port **8080**. Pull, run `python3 scripts/setup-security.py`, then `docker compose up --build -d` to apply the new Flyway migration; do not delete database volumes. Profiles, salary/contract PDFs and CSVs contain confidential information. Access requires a role-protected account. The default deployment remains loopback-only; configure HTTPS, backups and production credentials before shared use.
 
 ## Venue styling and supplied images
 

@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/spa}
+    username: ${DB_USER:spa}
+    password: ${DB_PASSWORD:spa_dev_only}
+server:
+  port: 8083
+ark:
+  internal-key: ${ARK_INTERNAL_KEY}
+  setup-token: ${ARK_SETUP_TOKEN:}
+  public-origin: ${ARK_PUBLIC_ORIGIN:http://localhost:8080}
+  cookie-secure: ${ARK_COOKIE_SECURE:false}
+  loki-url: http://loki:3100
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+logging:
+  structured:
+    format:
+      console: logstash
+      file: logstash
+    json:
+      add:
+        service: ${spring.application.name}

@@ -1,5 +1,7 @@
 "use strict";
-(() => {
+(async () => {
+  await window.ArkAppReady;
+  if (!window.Ark) return;
   const { api, el, notice } = window.Ark;
   const $ = (id) => document.getElementById(id);
   const state = {
@@ -134,7 +136,8 @@
     } catch (e) {
       if (generation === state.attendanceGeneration) {
         error("attendance-error", e.message);
-        $("attendance-empty").textContent = "Attendance is temporarily unavailable. Try Refresh.";
+        $("attendance-empty").textContent =
+          "Attendance is temporarily unavailable. Try Refresh.";
       }
     } finally {
       if (generation === state.attendanceGeneration)

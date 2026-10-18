@@ -1,6 +1,33 @@
 const { test, expect } = require("@playwright/test");
 const { randomUUID } = require("node:crypto");
 
+const authCredentials = () => {
+  if (process.env.ARK_TEST_USERNAME && process.env.ARK_TEST_PASSWORD)
+    return {
+      username: process.env.ARK_TEST_USERNAME,
+      password: process.env.ARK_TEST_PASSWORD,
+    };
+  return JSON.parse(
+    require("node:fs").readFileSync(
+      require("node:path").resolve(__dirname, "../../.runtime/test-auth.json"),
+      "utf8",
+    ),
+  );
+};
+test.beforeEach(async ({ request, context }) => {
+  const origin = process.env.SPA_BASE_URL || "http://localhost:8080";
+  const session = await (await request.get("/api/auth/session")).json();
+  const login = await request.post("/api/auth/login", {
+    data: authCredentials(),
+    headers: { Origin: origin, "X-CSRF-Token": session.csrfToken },
+  });
+  expect(login.ok()).toBeTruthy();
+  const current = await login.json();
+  // API fixture requests use the same protected session as the page.
+  request._arkCsrf = current.csrfToken;
+  await context.addCookies((await request.storageState()).cookies);
+});
+
 test("guest booking, search, Kafka confirmation, and duplicate error through the gateway", async ({
   page,
 }) => {
@@ -241,6 +268,10 @@ test("staff details, Punjab contract drafts and salary PDF downloads", async ({
   const staffName = "HR Browser " + randomUUID().slice(0, 8);
   const staff = await (
     await request.post("/api/staff", {
+      headers: {
+        Origin: process.env.SPA_BASE_URL || "http://localhost:8080",
+        "X-CSRF-Token": request._arkCsrf,
+      },
       data: { name: staffName, role: "Stylist" },
     })
   ).json();

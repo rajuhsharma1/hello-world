@@ -18,10 +18,13 @@ jobs:
       - run: mvn -B verify
       - run: npm ci --prefix ui
       - run: npx --prefix ui playwright install --with-deps chromium
+      - run: python3 scripts/setup-security.py
       - run: docker compose up --build -d
+      - run: python3 scripts/bootstrap-test-user.py
       - run: python3 scripts/smoke.py
       - run: python3 scripts/operations-smoke.py
       - run: python3 scripts/administration-smoke.py
+      - run: python3 scripts/security-smoke.py
       - run: npm test --prefix ui
       - if: failure()
         run: docker compose logs --no-color
