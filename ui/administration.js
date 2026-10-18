@@ -40,9 +40,19 @@
     state.people.find((p) => p.id === $("hr-staff").value);
   function pdfLinks(path) {
     const box = el("div", "document-links");
-    const download = el("a", "button secondary", "Download PDF");
-    download.href = path + "?download=true";
-    const print = el("a", "button secondary", "Open / print PDF");
+    const download = el(
+      "a",
+      "button secondary",
+      path.includes("pack.pdf") ? "Download employment pack" : "Download PDF",
+    );
+    download.href = path + (path.includes("?") ? "&" : "?") + "download=true";
+    const print = el(
+      "a",
+      "button secondary",
+      path.includes("pack.pdf")
+        ? "Open / print employment pack"
+        : "Open / print PDF",
+    );
     print.href = path;
     print.target = "_blank";
     print.rel = "noopener";
@@ -105,6 +115,20 @@
       if (selected !== $("hr-staff").value) return;
       $("contract-list").replaceChildren();
       $("salary-list").replaceChildren();
+      if (contracts.length && salaries.length) {
+        const pack = el("div", "document-item");
+        pack.append(
+          el(
+            "strong",
+            undefined,
+            "Combined employment & salary pack · latest saved versions",
+          ),
+          pdfLinks(
+            `/api/contracts/${contracts[0].id}/pack.pdf?salaryId=${salaries[0].id}`,
+          ),
+        );
+        $("contract-list").append(pack);
+      }
       if (!contracts.length)
         $("contract-list").append(
           el("p", "empty", "No contract drafts saved for this employee."),

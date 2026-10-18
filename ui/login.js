@@ -18,7 +18,7 @@
     for (const id of ["login-form", "setup-form", "change-form"])
       $(id).hidden = true;
     if (s.authenticated && !s.user.mustChangePassword) {
-      location.replace("/");
+      location.replace("/index.html");
       return;
     }
     if (s.authenticated) {

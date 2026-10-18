@@ -6,12 +6,14 @@
     <meta name="theme-color" content="#071b30" />
     <title>The Ark Salon &amp; Spa · Spa management</title>
     <link rel="icon" href="/logo.svg" />
+    <link rel="stylesheet" href="/insights.css" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/session.js" defer></script>
     <script src="/app.js" defer></script>
     <script src="/operations.js" defer></script>
     <script src="/administration.js" defer></script>
     <script src="/security-ui.js" defer></script>
+    <script src="/insights.js" defer></script>
   </head>
   <body class="auth-pending">
     <div id="auth-unavailable" class="banner warning" role="alert" hidden></div>
@@ -54,7 +56,12 @@
         ><a href="#contacts" data-view="contacts"
           ><span aria-hidden="true">☎</span> Emergency contacts</a
         >
-        <a href="#logs" data-view="logs"
+        <a href="#statistics" data-view="statistics"
+          ><span aria-hidden="true">▥</span> Statistics</a
+        ><a href="#website" data-view="website"
+          ><span aria-hidden="true">◎</span> Website & enquiries</a
+        ><a href="/" target="_blank" rel="noopener">Public website ↗</a
+        ><a href="#logs" data-view="logs"
           ><span aria-hidden="true">≡</span> System logs</a
         ><a href="#users" data-view="users"
           ><span aria-hidden="true">⚿</span> Access control</a
@@ -226,6 +233,30 @@
                 Venue visuals adapted from the supplied photographs.
               </p>
             </div>
+          </section>
+          <section
+            id="overview-insights"
+            class="panel overview-insights"
+            hidden
+          >
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">BUSINESS PULSE</p>
+                <h2>Revenue at a glance</h2>
+              </div>
+              <a href="#statistics" class="button secondary"
+                >Explore statistics ↗</a
+              >
+            </div>
+            <div id="overview-financial-metrics" class="insight-metrics"></div>
+            <div
+              id="overview-revenue-chart"
+              class="revenue-chart compact-chart"
+            ></div>
+            <p class="chart-note">
+              Recorded monthly collections · current year versus previous year
+            </p>
+            <div id="overview-insights-error" class="muted" role="status"></div>
           </section>
         </section>
 
@@ -780,6 +811,230 @@
           <span>Thoughtfully scheduled. Beautifully simple.</span
           ><span id="last-updated">Connecting to your workspace…</span>
         </footer>
+        <section id="statistics-view" hidden>
+          <div class="panel insights-toolbar">
+            <label
+              >Revenue year
+              <input
+                id="stats-year"
+                type="number"
+                min="2000"
+                max="2100" /></label
+            ><button class="button secondary" id="refresh-statistics">
+              Refresh statistics</button
+            ><span id="stats-period-caption" class="muted"></span>
+          </div>
+          <div
+            id="stats-error"
+            class="banner warning"
+            role="alert"
+            hidden
+          ></div>
+          <div class="insight-metrics" id="stats-metrics"></div>
+          <div class="panel insight-chart-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">THE BIGGER PICTURE</p>
+                <h2>Monthly revenue · year on year</h2>
+              </div>
+            </div>
+            <div id="revenue-chart" class="revenue-chart"></div>
+            <p class="chart-note">
+              Recorded collections in INR. Current and previous calendar year;
+              future months are not forecasts. A partial year should not be
+              compared with a full year as a growth rate.
+            </p>
+            <details class="chart-data">
+              <summary>View monthly figures</summary>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Revenue</th>
+                      <th>Previous year</th>
+                      <th>Expenses</th>
+                      <th>Operating result</th>
+                      <th>Visits</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthly-statistics"></tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">PEOPLE & PERFORMANCE</p>
+                <h2>Staff client visits</h2>
+              </div>
+            </div>
+            <div class="insights-toolbar">
+              <label
+                >Period<select id="staff-stats-period">
+                  <option value="WEEK">Week</option>
+                  <option value="MONTH" selected>Month</option>
+                  <option value="YEAR">Year</option>
+                </select></label
+              ><label
+                >Containing date<input
+                  id="staff-stats-date"
+                  type="date"
+                  required /></label
+              ><span id="staff-stats-range" class="muted"></span>
+            </div>
+            <div id="staff-stat-chart"></div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Staff member</th>
+                    <th>Role</th>
+                    <th>Client visits</th>
+                    <th>Distinct contacts</th>
+                    <th>Revenue</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-statistics"></tbody>
+              </table>
+            </div>
+            <p class="chart-note">
+              A visit is one recorded sales entry, not an appointment or an
+              attendance record. Distinct contacts count different contact
+              numbers per staff member; shared numbers and multiple service
+              entries can affect counts. Weeks run Monday–Sunday in the salon
+              business calendar.
+            </p>
+          </div>
+        </section>
+        <section id="website-view" hidden>
+          <div class="website-shortcuts">
+            <a class="button secondary" href="/" target="_blank" rel="noopener"
+              >Open public website ↗</a
+            ><a
+              class="button secondary"
+              href="/mailbox/"
+              target="_blank"
+              rel="noopener"
+              >Local test email inbox ↗</a
+            >
+          </div>
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">INCOMING</p>
+                <h2>Enquiries, careers & complaints</h2>
+              </div>
+              <button class="button secondary" id="refresh-inbox">
+                Refresh
+              </button>
+            </div>
+            <div class="insights-toolbar">
+              <label
+                >Type<select id="inbox-kind">
+                  <option value="ALL">All enquiries</option>
+                  <option value="BOOKING">Booking enquiries</option>
+                  <option value="CAREER">Careers</option>
+                  <option value="CONTACT">Contact</option>
+                  <option value="COMPLAINT">Complaints</option>
+                </select></label
+              ><span class="muted">25 entries per page · newest first</span>
+            </div>
+            <div
+              id="inbox-error"
+              class="banner warning"
+              role="alert"
+              hidden
+            ></div>
+            <div id="enquiry-cards" class="enquiry-cards"></div>
+            <div class="panel-footer">
+              <button id="inbox-previous" class="button secondary">
+                Previous</button
+              ><span id="inbox-page"></span
+              ><button id="inbox-next" class="button secondary">Next</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">THE ARK JOURNAL</p>
+                <h2>Blog publishing</h2>
+              </div>
+              <button id="new-blog" class="button secondary">New post</button>
+            </div>
+            <div id="blog-list" class="blog-management"></div>
+            <form id="blog-editor" class="editor-form">
+              <input type="hidden" name="id" /><label
+                >Title<input name="title" required maxlength="180" /></label
+              ><label
+                >Short introduction<textarea
+                  name="excerpt"
+                  required
+                  maxlength="400"
+                  rows="2"
+                ></textarea></label
+              ><label
+                >Article<textarea
+                  name="body"
+                  required
+                  maxlength="20000"
+                  rows="8"
+                ></textarea></label
+              ><label class="check-label"
+                ><input name="published" type="checkbox" /> Published on the
+                public website</label
+              >
+              <p class="muted">
+                Plain text only. Unpublished drafts are visible only to
+                managers.
+              </p>
+              <button type="submit" class="button primary">Save post</button>
+              <div id="blog-status" role="status"></div>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">WEBSITE SETTINGS</p>
+                <h2>Email delivery & homepage film</h2>
+              </div>
+            </div>
+            <form id="website-settings" class="editor-form">
+              <label
+                >Enquiry recipient email<input
+                  name="recipientEmail"
+                  type="email"
+                  required
+                  maxlength="254"
+              /></label>
+              <p class="muted">
+                Used for new career, booking, contact and complaint
+                notifications and the public contact email. Previously queued
+                messages retain their original recipient; retrying a failed
+                delivery uses the current email.
+              </p>
+              <label
+                >Homepage video URL (optional)<input
+                  name="heroVideoUrl"
+                  type="url"
+                  maxlength="1000"
+                  placeholder="https://your-media-host.example/ark-film.mp4"
+              /></label>
+              <p class="muted">
+                Use an HTTPS MP4/WebM film you have permission to publish. The
+                homepage keeps its image when no film is configured. SMTP sender
+                credentials are configured privately on the server. The default
+                development setup captures messages in the local inbox; it does
+                not deliver to Gmail.
+              </p>
+              <button class="button primary" type="submit">
+                Save website settings
+              </button>
+              <div id="website-status" role="status"></div>
+            </form>
+          </div>
+        </section>
       </main>
     </div>
     <dialog id="booking-dialog" aria-labelledby="dialog-title">

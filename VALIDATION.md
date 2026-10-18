@@ -22,3 +22,13 @@ Security update validation:
 - Browser sign-in, protected logging and account views, sign-out, forced staff password changes and role-specific navigation passed. All previous six salon workflows passed with authenticated sessions. The new desktop login was visually inspected.
 - Local secrets and disposable test credentials remain ignored. No default application account exists on a fresh deployment. The existing Grafana administrator password in this workspace was explicitly rotated to its generated secret.
 - Public HTTPS hosting was not deployed. See SECURITY.md for configuration and remaining operational requirements.
+
+## Website, analytics and document design update
+
+- The complete Maven reactor passed **19 backend tests** (4 authentication, 3 booking, 12 operations). New checks cover staff calendar-week/year boundaries, resume type/size limits and long professional PDF content with page totals.
+- All **10 Chromium browser tests** passed, including public homepage imagery, mobile layout, complaint submission, careers controls, dashboard/revenue charts, weekly/monthly/yearly staff selectors, manager inbox and private blog drafts. The prior authenticated salon and security workflows continue to pass.
+- Real-stack website smoke checks passed: consent/origin/type rejection, private resume round trip, complaint status, queued notification delivery to local Mailpit, draft/published blog visibility, a complete 12-month revenue series and exact staff period counts across week/month/year boundaries. No external Gmail delivery was attempted; SMTP remains intentionally unconfigured.
+- All previous booking/Kafka/tracing/logging, operations, administration and security smoke checks passed. The combined employment and salary PDF was also downloaded through the protected gateway.
+- Public desktop/mobile screens, dashboard/statistics and a rendered salary PDF were inspected. The generated spa-room hero is labelled illustrative; no current venue imagery or footage is falsely claimed. Optional video playback is supported through a manager-configured HTTPS URL; no video was supplied or configured.
+- The new Flyway migration preserves existing records and adds website settings, enquiry/resume storage, notification outbox and journal posts. All databases remain private; only gateway port 8080 is published.
+- Full multi-stage Docker rebuilds hit the cloud disk limit. Unused build cache was cleared without removing application volumes. Java services were run from runtime images containing the locally verified Maven jars; the gateway built normally. The normal multi-stage rebuild was not completed in this constrained cloud instance.

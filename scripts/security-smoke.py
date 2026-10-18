@@ -18,7 +18,7 @@ rejected(staff,'/api/appointments',403)
 staff.call('/api/auth/password',{'currentPassword':temporary,'newPassword':permanent})
 rejected(staff,'/api/appointments',401)
 staff.call('/api/auth/session');staff.call('/api/auth/login',{'username':name,'password':permanent})
-for path in ['/api/salaries?staffId='+str(uuid.uuid4()),'/api/contracts?staffId='+str(uuid.uuid4()),'/api/expenses?date=2026-01-01','/api/reports/sales.csv?period=YEAR&date=2026-01-01','/api/auth/users','/api/auth/logs','/api/auth/audit','/grafana/']:
+for path in ['/api/salaries?staffId='+str(uuid.uuid4()),'/api/contracts?staffId='+str(uuid.uuid4()),'/api/expenses?date=2026-01-01','/api/reports/sales.csv?period=YEAR&date=2026-01-01','/api/auth/users','/api/auth/logs','/api/auth/audit','/api/website/enquiries','/api/statistics?year=2026&period=MONTH&date=2026-01-01','/grafana/','/mailbox/']:
     rejected(staff,path,403)
 people=staff.call('/api/staff');assert all(set(p)=={'id','name','role'} for p in people)
 assert isinstance(staff.call('/api/appointments'),list)

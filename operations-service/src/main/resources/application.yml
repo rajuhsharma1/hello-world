@@ -5,6 +5,22 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5434/spa}
     username: ${DB_USER:spa}
     password: ${DB_PASSWORD:spa_dev_only}
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  mail:
+    host: ${SMTP_HOST:mailpit}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      mail.smtp.starttls.required: ${SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   jpa:
     open-in-view: false
     hibernate:
@@ -40,3 +56,6 @@ logging:
 ark:
   auth-url: ${ARK_AUTH_URL:http://localhost:8083}
   internal-key: ${ARK_INTERNAL_KEY}
+
+  public-origin: ${ARK_PUBLIC_ORIGIN:http://localhost:8080}
+  mail-from: ${SMTP_FROM:website@ark.local}

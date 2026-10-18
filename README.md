@@ -19,7 +19,7 @@ If you already cloned the repository, switch to `feature/spa-management` and pul
 docker compose logs -f booking-service notification-service gateway
 ```
 
-Open **http://localhost:8080** in your local browser. On first use, create your owner account using `ARK_SETUP_TOKEN` from your private `.env` file. There is no default application username or password. See [SECURITY.md](SECURITY.md) for roles, sessions and deployment settings. Everything you need goes through this one port:
+Open **http://localhost:8080** in your local browser. Use **Staff sign in** to open the staff workspace. On first use, create your owner account using `ARK_SETUP_TOKEN` from your private `.env` file. There is no default application username or password. See [SECURITY.md](SECURITY.md) for roles, sessions and deployment settings. The public site and staff workspace share this one port:
 
 - **Overview:** upcoming bookings and recent confirmation records.
 - **Appointments:** create a future booking, search the current page, browse 50-record pages, and refresh.
@@ -32,7 +32,12 @@ All browser API requests use relative paths on the same origin. No CORS configur
 
 ```mermaid
 flowchart LR
-    Browser -->|"localhost:8080"|Gateway["Nginx gateway + UI"]
+    Browser -->|"localhost:8080"|Gateway["Nginx gateway + public site + staff UI"]
+    Gateway -->|session and login|Auth[Authentication service]
+    Auth --> AuthDB[(Authentication PostgreSQL)]
+    Gateway -->|public enquiries and statistics|Operations
+    Operations --> MailQueue[Enquiry email outbox]
+    MailQueue --> SMTP[Mailpit locally / SMTP provider when configured]
     Gateway -->|/api/appointments|Booking[Booking service]
     Gateway -->|/api/notifications|Notifications[Notification service]
     Gateway -->|staff, attendance, sales|Operations[Operations service]
@@ -58,7 +63,7 @@ Only the gateway publishes a host port, bound to `127.0.0.1:8080`. PostgreSQL, K
 
 ## API through the gateway
 
-All examples below require an authenticated session cookie. Mutations also require the session CSRF token and matching Origin header. Use the browser UI or the authenticated smoke-test client as a reference.
+The staff API examples below require an authenticated session cookie. Mutations also require the session CSRF token and matching Origin header. Use the browser UI or the authenticated smoke-test client as a reference.
 
 ```sh
 curl -i -X POST http://localhost:8080/api/appointments \
@@ -203,3 +208,19 @@ The app still publishes only port **8080**. Pull, run `python3 scripts/setup-sec
 ## Venue styling and supplied images
 
 The UI uses the supplied Ark sign and reception/treatment-room photos as references for deep navy, cyan, white and warm wood styling. `ui/assets/ark-logo.png` is an AI-assisted reconstruction of the photographed sign, and `ark-venue.png` is an adapted two-photo venue diptych; they are not original master assets or unmodified Google Maps photos. Source notes are in `ui/assets/SOURCES.md`. The overview includes the supplied Kharar address and a Google Maps search link. The listing could not be fetched from the cloud environment, so no additional Google images, live review counts or current opening hours are asserted.
+
+## Public website, enquiries and statistics
+
+The gateway homepage `/` now serves the visitor website; staff sign in at `/login.html` and work in `/index.html`. Existing bookmark hashes should move from `/#sales` to `/index.html#sales`. Everything still uses the same gateway port.
+
+The visitor site includes salon/spa service enquiries, a careers questionnaire with optional PDF resume (maximum 5 MB), contact enquiries, complaints and the Ark journal. Enquiries are stored in PostgreSQL and given a reference; a booking enquiry is **not** a confirmed appointment. Public writes enforce the configured Origin, a custom request header, field validation, consent, upload bounds and an IP rate limit. Uploaded resumes remain private and are downloadable only as attachments by authorised managers. The public hero is clearly labelled illustrative; the venue section uses the previously adapted supplied references. In **Website & enquiries**, managers can set an optional HTTPS video URL for media they have permission to publish; otherwise the hero image remains.
+
+Owners and administrators can review enquiries, change OPEN / IN_REVIEW / RESOLVED status, download resumes, publish/unpublish plain-text journal posts, change the recipient email and retry failed email deliveries. Draft posts are private. The initial recipient is `thearksalonandspa@gmail.com`; editing it affects new notifications and the public contact link. Existing queued notifications retain their destination; a failed-email retry uses the current destination.
+
+Email notifications use a persisted outbox, with bounded retries and a visible delivery status. The default local stack sends to **Mailpit**, accessible to managers at `/mailbox/`; it does **not** deliver to Gmail. Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_AUTH` and `SMTP_STARTTLS` privately in `.env` for your provider, then recreate operations-service. For authenticated STARTTLS SMTP, use port 587 with auth and STARTTLS enabled and a verified sender address. SMTP credentials are never editable or displayed in the browser. A SENT state means the configured SMTP server accepted the message, not proof of external inbox delivery. Delivery is at least once, so rare duplicate notifications are possible after a process failure. Public submissions are durable even while SMTP is unavailable.
+
+**Statistics** provides 12 monthly revenue comparisons with the previous calendar year, monthly expenses/operating results and staff client visits for a selected week, month or year. Charts have accessible numeric tables. Zero-sales months and staff are retained. Weeks run Monday–Sunday; dates follow the salon business calendar. A visit is a recorded sale entry; distinct-client counts use distinct contact numbers per employee and period. These are neither appointment counts nor a reliable measure of unique people when numbers are shared. Current partial-year totals are labelled as recorded collections, not compared with a complete previous year as a growth rate. The dashboard displays current-month collections, visits and the year's recorded revenue.
+
+Staff contract, salary and monthly P&L PDFs now use branded layouts, structured sections, financial rows, signature lines and page totals. Staff records also offer a **combined employment and salary pack**, using the most recent saved contract and salary versions for the selected employee. Both versions must belong to the same employee. Employment terms remain editable Punjab, India drafts requiring local legal review; styling does not certify legal compliance.
+
+On disposable test deployments, run `python3 scripts/website-smoke.py` after the existing checks. It creates sample enquiries and historical sales, verifies private resume round trips and local email capture, tests draft publishing and validates real staff calendar-period counts. It expects the local Mailpit configuration. Do not run this data-creating suite against a live salon database.

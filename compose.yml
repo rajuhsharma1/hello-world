@@ -16,6 +16,7 @@ services:
       - grafana
       - zipkin
       - loki
+      - mailpit
   auth-db:
     image: postgres:17.6
     environment:
@@ -79,10 +80,24 @@ services:
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       LOGGING_FILE_NAME: /logs/operations.log
       SPA_ZONE: ${SPA_ZONE:-Asia/Kolkata}
+      ARK_PUBLIC_ORIGIN: ${ARK_PUBLIC_ORIGIN:-http://localhost:8080}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-website@ark.local}
+      SMTP_AUTH: ${SMTP_AUTH:-false}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
     volumes: ["app-logs:/logs"]
     depends_on:
       storage-init: {condition: service_completed_successfully}
       operations-db: {condition: service_healthy}
+  mailpit:
+    image: axllent/mailpit:v1.27.10
+    environment:
+      MP_WEBROOT: /mailbox/
+      MP_DATABASE: /data/mailpit.db
+    volumes: ["mail-data:/data"]
   storage-init:
     image: apache/kafka:3.9.1
     user: "0:0"
@@ -174,6 +189,7 @@ services:
       notification-db: {condition: service_healthy}
       kafka: {condition: service_healthy}
 volumes:
+  mail-data:
   auth-data:
   operations-data:
   booking-data:

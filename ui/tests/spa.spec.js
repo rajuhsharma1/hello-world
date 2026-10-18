@@ -36,7 +36,7 @@ test("guest booking, search, Kafka confirmation, and duplicate error through the
   const guest = `Browser Guest ${randomUUID().slice(0, 8)}`;
   const therapist = `Therapist ${randomUUID().slice(0, 8)}`;
   const start = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 16);
-  await page.goto("/");
+  await page.goto("/index.html");
   await expect(
     page.getByRole("heading", { name: "A calmer way to manage your day." }),
   ).toBeVisible();
@@ -110,7 +110,7 @@ test("notification outage leaves the schedule usable and renders unsafe guest te
   await page.route("**/api/notifications", (route) =>
     route.fulfill({ status: 503, body: "offline" }),
   );
-  await page.goto("/#appointments");
+  await page.goto("/index.html#appointments");
   await expect(page.locator("#service-message")).toContainText(
     "Confirmations:",
   );
@@ -124,7 +124,7 @@ test("notification outage leaves the schedule usable and renders unsafe guest te
 
 test("mobile layout and keyboard booking dialog work", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/index.html");
   await expect(
     page.getByRole("button", { name: "New appointment", exact: false }),
   ).toBeVisible();
@@ -153,7 +153,7 @@ test("staff attendance and daily client sales split UPI, cash and card", async (
   const before = await (
     await request.get(`/api/sales?date=${businessDay}`)
   ).json();
-  await page.goto("/#attendance");
+  await page.goto("/index.html#attendance");
   await expect(
     page.getByRole("link", { name: "The Ark Salon & Spa home" }),
   ).toBeVisible();
@@ -275,7 +275,7 @@ test("staff details, Punjab contract drafts and salary PDF downloads", async ({
       data: { name: staffName, role: "Stylist" },
     })
   ).json();
-  await page.goto("/#hr");
+  await page.goto("/index.html#hr");
   await page
     .getByLabel("Choose staff member", { exact: true })
     .selectOption(staff.id);
@@ -374,6 +374,11 @@ test("staff details, Punjab contract drafts and salary PDF downloads", async ({
   await page.getByRole("button", { name: "Save record", exact: true }).click();
   await expect(page.locator("#admin-dialog")).toBeHidden();
   await expect(page.locator("#contract-list")).toContainText("Draft contract");
+  await expect(
+    page
+      .locator("#contract-list")
+      .getByRole("link", { name: "Download employment pack", exact: true }),
+  ).toBeVisible();
   const contractDownload = page.waitForEvent("download");
   await page
     .locator("#contract-list")
@@ -393,7 +398,7 @@ test("daily expenses, monthly P&L PDF, CSV periods and emergency contacts", asyn
   const before = await (
     await request.get("/api/reports/profit-loss?date=" + day)
   ).json();
-  await page.goto("/#expenses");
+  await page.goto("/index.html#expenses");
   await page.getByRole("button", { name: /Add expense/ }).click();
   await page.getByLabel("Date paid", { exact: true }).fill(day);
   await page
@@ -464,7 +469,7 @@ test("daily expenses, monthly P&L PDF, CSV periods and emergency contacts", asyn
   await expect(page.locator("#admin-dialog")).toBeHidden();
   await expect(card).toContainText("Plumber / maintenance");
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/#reports");
+  await page.goto("/index.html#reports");
   await expect(page.locator("#profit-summary .stat")).toHaveCount(3);
   expect(
     await page.evaluate(

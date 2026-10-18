@@ -39,6 +39,7 @@ public class ServiceSecurity {
       @Override
       protected boolean shouldNotFilter(HttpServletRequest request) {
         return (
+          request.getRequestURI().startsWith("/api/public/") ||
           request.getRequestURI().startsWith("/actuator/health") ||
           request.getRequestURI().equals("/error")
         );
@@ -114,7 +115,7 @@ public class ServiceSecurity {
       )
       .authorizeHttpRequests(c ->
         c
-          .requestMatchers("/actuator/health/**", "/error")
+          .requestMatchers("/api/public/**", "/actuator/health/**", "/error")
           .permitAll()
           .anyRequest()
           .authenticated()

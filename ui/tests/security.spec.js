@@ -16,22 +16,22 @@ const credentials = () =>
 test("sign-in, protected logs, account controls and sign-out", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/index.html");
   await expect(page).toHaveURL(/login[.]html/);
   await page.locator("#username").fill(credentials().username);
   await page.locator("#password").fill(credentials().password);
   await page.locator("#login-form button[type=submit]").click();
   await expect(page.locator("#sign-out")).toBeVisible();
-  await page.goto("/#logs");
+  await page.goto("/index.html#logs");
   await expect(page.locator("#logs-body tr").first()).toBeVisible();
   await expect(page.locator("#log-error")).toBeHidden();
-  await page.goto("/#users");
+  await page.goto("/index.html#users");
   await expect(page.locator("#new-account")).toBeVisible();
   await page.locator("#sign-out").click();
   await expect(page).toHaveURL(/login[.]html/);
   const denied = await page.request.get("/api/staff");
   expect(denied.status()).toBe(401);
-  await page.goto("/#users");
+  await page.goto("/index.html#users");
   await expect(page).toHaveURL(/login[.]html/);
 });
 
@@ -91,7 +91,7 @@ test("temporary staff password change and restricted navigation", async ({
     await expect(page.locator('[data-view="appointments"]')).toBeVisible();
     await expect(page.locator('[data-view="sales"]')).toBeVisible();
     expect((await page.request.get("/api/auth/logs")).status()).toBe(403);
-    await page.goto("/#users");
+    await page.goto("/index.html#users");
     await expect(page).toHaveURL(/#overview$/);
   } finally {
     await request.put("/api/auth/users/" + account.id, {

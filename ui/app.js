@@ -290,6 +290,8 @@ window.ArkAppReady = (async () => {
       "contacts",
       "logs",
       "users",
+      "statistics",
+      "website",
     ].includes(view)
       ? view
       : "overview";
@@ -306,8 +308,12 @@ window.ArkAppReady = (async () => {
         "contacts",
         "logs",
         "users",
+        "statistics",
+        "website",
       ],
       ADMIN: [
+        "statistics",
+        "website",
         "overview",
         "appointments",
         "notifications",
@@ -331,6 +337,16 @@ window.ArkAppReady = (async () => {
     document.getElementById("sidebar-logs").hidden =
       session.user.role === "STAFF";
     const titles = {
+      statistics: [
+        "See the story in your numbers.",
+        "Monthly revenue, yearly comparisons and staff client visits.",
+        "Statistics",
+      ],
+      website: [
+        "Stay connected to your community.",
+        "Careers, enquiries, complaints, journal and website settings.",
+        "Website & enquiries",
+      ],
       logs: [
         "A clear view behind the scenes.",
         "Search application logs and review security activity.",
@@ -399,6 +415,8 @@ window.ArkAppReady = (async () => {
       "contacts",
       "logs",
       "users",
+      "statistics",
+      "website",
     ])
       $(`${key}-view`).hidden = key !== current;
     document.querySelectorAll("[data-view]").forEach((a) => {

@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="The Ark Salon & Spa, City Heart, Kharar, Punjab. Discover salon and spa services, enquire about a visit, or join our team."
+    />
+    <title>The Ark Salon & Spa · A moment for you</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/website.css" />
+    <script src="/visit.js" defer></script>
+  </head>
+  <body class="public-site">
+    <a class="skip-link" href="#public-main">Skip to content</a>
+    <header class="public-header">
+      <a href="/" aria-label="The Ark homepage"
+        ><img
+          src="/assets/ark-logo.png"
+          alt="The Ark Salon & Spa"
+          width="180"
+          height="60"
+      /></a>
+      <nav aria-label="Website navigation">
+        <a href="#services">Experiences</a><a href="#journal">Journal</a
+        ><a href="#careers">Careers</a><a href="#contact">Contact</a
+        ><a class="public-cta" href="#booking">Plan your visit ↗</a
+        ><a class="staff-link" href="/login.html">Staff sign in</a>
+      </nav>
+    </header>
+    <main id="public-main">
+      <section class="public-hero">
+        <img
+          src="/assets/ark-spa-hero.png"
+          alt="Illustrative spa treatment room with warm lighting and fresh towels"
+          class="hero-photo"
+          fetchpriority="high"
+        /><video
+          id="hero-video"
+          class="hero-film"
+          muted
+          loop
+          playsinline
+          controls
+          preload="none"
+          hidden
+          aria-label="The Ark spa film"
+        ></video>
+        <div class="hero-shade"></div>
+        <div class="hero-copy">
+          <p class="eyebrow">THE ARK · SALON & SPA · KHARAR</p>
+          <h1>A little time.<br />A deeper calm.</h1>
+          <p>
+            Step out of the everyday. Find your moment with thoughtful salon
+            care and unhurried spa experiences.
+          </p>
+          <a href="#booking" class="public-cta"
+            >Find your moment <span>↗</span></a
+          ><span class="hero-caption">An invitation to slow down.</span>
+        </div>
+        <span class="image-disclosure">Illustrative spa imagery</span>
+      </section>
+      <div class="public-ribbon">
+        <span>CARE, AT YOUR PACE</span><span>PERSONAL ATTENTION</span
+        ><span>YOUR EVERYDAY ESCAPE</span>
+      </div>
+      <section class="public-section" id="services">
+        <div class="public-section-heading">
+          <div>
+            <p class="eyebrow">THE EXPERIENCE</p>
+            <h2>Feel more like yourself.</h2>
+          </div>
+          <p>
+            Tell us what you have in mind. Our team will help you choose a
+            service and confirm availability.
+          </p>
+        </div>
+        <div class="experience-grid">
+          <article>
+            <span class="experience-number">01</span>
+            <h3>Massage & relaxation</h3>
+            <p>
+              A quieter space and a moment of care. Discuss your comfort and
+              preferences with our team.
+            </p>
+            <a href="#booking" data-service="Massage & relaxation"
+              >Enquire about a session ↗</a
+            >
+          </article>
+          <article>
+            <span class="experience-number">02</span>
+            <h3>Hair & styling</h3>
+            <p>
+              A fresh perspective on your everyday look, with attention to the
+              details that feel like you.
+            </p>
+            <a href="#booking" data-service="Hair & styling"
+              >Plan a salon visit ↗</a
+            >
+          </article>
+          <article>
+            <span class="experience-number">03</span>
+            <h3>Beauty & self-care</h3>
+            <p>
+              Take a little time for the finishing touches. Ask about the
+              services available for your visit.
+            </p>
+            <a href="#booking" data-service="Beauty & self-care"
+              >Explore your options ↗</a
+            >
+          </article>
+        </div>
+        <p class="public-small">
+          Services, duration and prices are confirmed by our team before
+          booking. Share allergies or sensitivities before a treatment.
+        </p>
+      </section>
+      <section class="venue-section">
+        <img
+          src="/assets/ark-venue.png"
+          alt="Venue imagery adapted from the supplied Ark Salon & Spa photographs"
+          loading="lazy"
+        />
+        <div>
+          <p class="eyebrow">YOUR NEIGHBOURHOOD RETREAT</p>
+          <h2>Find us in<br />the heart of Kharar.</h2>
+          <p>
+            The Ark Salon & Spa<br />1st Floor, City Heart, SCO 42,<br />opposite
+            Digi Hut, Janta Nagar,<br />Kharar, Punjab 140301
+          </p>
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=The+Ark+Salon+and+Spa+City+Heart+SCO+42+Kharar+Punjab"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Get directions ↗</a
+          ><small>Venue imagery adapted from supplied photographs.</small>
+        </div>
+      </section>
+      <section class="public-section" id="journal">
+        <div class="public-section-heading">
+          <div>
+            <p class="eyebrow">THE ARK JOURNAL</p>
+            <h2>A little inspiration.</h2>
+          </div>
+          <p>
+            Notes on making space for care, and getting the most from your next
+            visit.
+          </p>
+        </div>
+        <div id="public-posts" class="journal-grid">
+          <p>Loading the journal…</p>
+        </div>
+        <div id="public-post-error" role="status" hidden></div>
+      </section>
+      <section class="public-section enquiry-section" id="booking">
+        <div>
+          <p class="eyebrow">MAKE TIME FOR YOU</p>
+          <h2>Your next visit<br />starts here.</h2>
+          <p>
+            Share your preferred service and a few details. We’ll contact you to
+            discuss availability. Submitting an enquiry does not confirm an
+            appointment.
+          </p>
+          <p class="public-small">
+            For urgent changes, use your existing contact with the salon team.
+          </p>
+        </div>
+        <form data-enquiry="BOOKING" class="public-form">
+          <label
+            >Your name<input
+              name="name"
+              required
+              maxlength="100"
+              autocomplete="name" /></label
+          ><label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              maxlength="254"
+              autocomplete="email" /></label
+          ><label
+            >Contact number<input
+              name="phone"
+              required
+              pattern="[+]?[0-9]{7,15}"
+              maxlength="16"
+              autocomplete="tel" /></label
+          ><label
+            >Service<select name="subject" required>
+              <option>Massage & relaxation</option>
+              <option>Hair & styling</option>
+              <option>Beauty & self-care</option>
+              <option>Please help me choose</option>
+            </select></label
+          ><label
+            >Preferred date<input
+              name="preferredDate"
+              type="date"
+              required /></label
+          ><label
+            >Preferred time<input
+              name="preferredTime"
+              type="time"
+              required /></label
+          ><label class="wide"
+            >Anything we should know?<textarea
+              name="message"
+              required
+              maxlength="5000"
+              rows="3"
+            ></textarea>
+          </label>
+          <div class="form-end wide"></div>
+        </form>
+      </section>
+      <section
+        class="public-section enquiry-section careers-section"
+        id="careers"
+      >
+        <div>
+          <p class="eyebrow">GROW WITH THE ARK</p>
+          <h2>Good people.<br />Thoughtful care.</h2>
+          <p>
+            Love helping people feel their best? Tell us about your skills,
+            experience and the work you’re looking for.
+          </p>
+          <p class="public-small">
+            Applications are expressions of interest. Our team will contact
+            suitable applicants when opportunities are available.
+          </p>
+        </div>
+        <form data-enquiry="CAREER" class="public-form">
+          <label
+            >Full name<input
+              name="name"
+              required
+              maxlength="100"
+              autocomplete="name" /></label
+          ><label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              maxlength="254"
+              autocomplete="email" /></label
+          ><label
+            >Contact number<input
+              name="phone"
+              required
+              pattern="[+]?[0-9]{7,15}"
+              maxlength="16"
+              autocomplete="tel" /></label
+          ><label
+            >Position of interest<select name="position" required>
+              <option value="">Choose a role</option>
+              <option>Massage therapist</option>
+              <option>Hair stylist</option>
+              <option>Beauty therapist</option>
+              <option>Reception & operations</option>
+              <option>Other</option>
+            </select></label
+          ><label
+            >Relevant experience<select name="experience" required>
+              <option value="">Choose experience</option>
+              <option>New to the industry</option>
+              <option>Less than 1 year</option>
+              <option>1–3 years</option>
+              <option>3–5 years</option>
+              <option>5+ years</option>
+            </select></label
+          ><label
+            >When can you join?<input
+              name="availability"
+              required
+              maxlength="200"
+              placeholder="e.g. 30 days’ notice" /></label
+          ><label class="wide"
+            >Training, qualifications & skills<textarea
+              name="qualifications"
+              maxlength="1000"
+              rows="2"
+            ></textarea></label
+          ><label class="wide"
+            >Why would you like to join The Ark?<textarea
+              name="whyJoin"
+              required
+              maxlength="1000"
+              rows="3"
+            ></textarea></label
+          ><label class="wide"
+            >Tell us a little about yourself<textarea
+              name="message"
+              required
+              maxlength="5000"
+              rows="3"
+            ></textarea></label
+          ><label class="wide"
+            >Resume (optional, PDF up to 5 MB)<input
+              type="file"
+              name="resume"
+              accept="application/pdf,.pdf"
+            /><small
+              >Please omit Aadhaar, bank details and other sensitive identity
+              documents.</small
+            ></label
+          >
+          <div class="form-end wide"></div>
+        </form>
+      </section>
+      <section class="public-section enquiry-section" id="contact">
+        <div>
+          <p class="eyebrow">LET’S TALK</p>
+          <h2>We’re here<br />to listen.</h2>
+          <p>
+            Questions about a service, a special visit, or something else? Leave
+            your details and a member of our team will get back to you.
+          </p>
+          <a id="public-email" href="mailto:thearksalonandspa@gmail.com"
+            >thearksalonandspa@gmail.com</a
+          >
+        </div>
+        <form data-enquiry="CONTACT" class="public-form">
+          <label
+            >Your name<input
+              name="name"
+              required
+              maxlength="100"
+              autocomplete="name" /></label
+          ><label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              maxlength="254"
+              autocomplete="email" /></label
+          ><label
+            >Contact number<input
+              name="phone"
+              required
+              pattern="[+]?[0-9]{7,15}"
+              maxlength="16"
+              autocomplete="tel" /></label
+          ><label
+            >What’s this about?<input
+              name="subject"
+              required
+              maxlength="200" /></label
+          ><label class="wide"
+            >Your message<textarea
+              name="message"
+              required
+              maxlength="5000"
+              rows="4"
+            ></textarea>
+          </label>
+          <div class="form-end wide"></div>
+        </form>
+      </section>
+      <section
+        class="public-section enquiry-section complaint-section"
+        id="complaints"
+      >
+        <div>
+          <p class="eyebrow">HELP US DO BETTER</p>
+          <h2>Your experience<br />matters.</h2>
+          <p>
+            If something didn’t feel right, please tell us. Your concern goes to
+            the salon management team for review.
+          </p>
+          <p class="public-small">
+            Please avoid sharing medical, financial or identity documents. This
+            form is not monitored as an emergency service.
+          </p>
+        </div>
+        <form data-enquiry="COMPLAINT" class="public-form">
+          <label
+            >Your name<input
+              name="name"
+              required
+              maxlength="100"
+              autocomplete="name" /></label
+          ><label
+            >Email<input
+              name="email"
+              type="email"
+              required
+              maxlength="254"
+              autocomplete="email" /></label
+          ><label
+            >Contact number<input
+              name="phone"
+              required
+              pattern="[+]?[0-9]{7,15}"
+              maxlength="16"
+              autocomplete="tel" /></label
+          ><label
+            >Concern<input name="subject" required maxlength="200" /></label
+          ><label
+            >Visit date (optional)<input name="visitDate" type="date" /></label
+          ><label
+            >Booking reference (optional)<input
+              name="bookingReference"
+              maxlength="200" /></label
+          ><label class="wide"
+            >What happened, and how can we help?<textarea
+              name="message"
+              required
+              maxlength="5000"
+              rows="5"
+            ></textarea>
+          </label>
+          <div class="form-end wide"></div>
+        </form>
+      </section>
+    </main>
+    <footer class="public-footer">
+      <img
+        src="/assets/ark-logo.png"
+        alt="The Ark Salon & Spa"
+        width="180"
+        height="60"
+      />
+      <div>
+        <p>A little care goes a long way.</p>
+        <a href="#complaints">Feedback & complaints</a> ·
+        <a href="/login.html">Staff workspace</a>
+        <p class="public-small">
+          Your submitted details are used to respond to your enquiry or
+          application and are accessible to authorised salon managers. Contact
+          us to request correction or deletion.
+        </p>
+      </div>
+      <a href="#public-main">Back to top ↑</a>
+    </footer>
+  </body>
+</html>

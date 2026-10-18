@@ -19,7 +19,7 @@ def check_pdf(path):
         assert r.headers['Content-Type'].startswith('application/pdf')
         assert r.read().startswith(b'%PDF-')
         assert r.headers['Content-Disposition'].startswith('inline')
-    with raw(path+'?download=true') as r:assert r.headers['Content-Disposition'].startswith('attachment')
+    with raw(path+('&' if '?' in path else '?')+'download=true') as r:assert r.headers['Content-Disposition'].startswith('attachment')
 tag=str(uuid.uuid4())[:8]
 s=call('/api/staff',{'name':'HR Smoke '+tag,'role':'Stylist'})
 updated=call('/api/staff/'+s['id'],{'name':'Updated HR '+tag,'role':'Senior stylist','contactNumber':'+919876543220','address':'Employee address, Punjab','joinedOn':'2003-01-01'},'PUT')
@@ -29,6 +29,7 @@ c=call('/api/contracts',contract);check_pdf('/api/contracts/'+c['id']+'/pdf')
 assert call('/api/contracts?staffId='+s['id'])[0]['staff_name']==updated['name']
 salary={'staffId':s['id'],'effectiveFrom':'2003-01-01','annualCtc':'360000.00','monthlyBasic':'20000.00','monthlyHra':'5000.00','monthlyAllowances':'5000.00','monthlyEmployerContributions':'0.00','monthlyEmployeeDeductions':'1000.00','annualBonus':'0.00','notes':'Test manual structure; no statutory-rate inference.'}
 pay=call('/api/salaries',salary);check_pdf('/api/salaries/'+pay['id']+'/pdf')
+check_pdf('/api/contracts/'+c['id']+'/pack.pdf?salaryId='+pay['id'])
 reject('/api/salaries',{**salary,'annualCtc':'1.00'},400)
 assert call('/api/salaries?staffId='+s['id'])[0]['annual_ctc']==Decimal('360000.00')
 contact={'name':'Electrician '+tag,'service':'Electrician','phone':'+919876543221','secondaryPhone':'112','address':'Local service area','notes':'Test maintenance contact.'}
