@@ -969,3 +969,366 @@ svg.decorative-leaf {
     min-width: 145px;
   }
 }
+.document-panel {
+  margin-top: 22px;
+}
+.legal-note {
+  margin-top: 20px;
+}
+.document-row {
+  border-top: 1px solid var(--line);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.document-row strong {
+  font-size: 12px;
+}
+.document-links {
+  display: flex;
+  gap: 9px;
+  flex-shrink: 0;
+}
+.document-links a {
+  text-decoration: none;
+}
+.report-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 20px 24px;
+}
+.report-controls a {
+  text-decoration: none;
+}
+.report-summary {
+  padding: 0 24px;
+}
+.report-controls select,
+#hr-staff {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 10px;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 40px;
+}
+.report-controls label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 7px;
+}
+.contacts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 22px;
+}
+.contact-card {
+  padding: 24px;
+}
+.contact-card h2 {
+  margin-bottom: 16px;
+}
+.contact-phone {
+  display: block;
+  margin: 12px 0;
+  color: var(--green);
+  font-size: 16px;
+  text-decoration: none;
+}
+.contact-card button {
+  margin-top: 18px;
+}
+.contact-card p {
+  overflow-wrap: anywhere;
+}
+#admin-dialog {
+  width: min(720px, calc(100% - 30px));
+}
+.form-grid textarea {
+  width: 100%;
+  min-height: 95px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  padding: 12px;
+  color: var(--ink);
+  font: inherit;
+}
+.form-grid > div > label {
+  margin-bottom: 8px;
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar-bottom {
+  padding-top: 30px;
+}
+.document-panel .panel-heading > div {
+  max-width: 65%;
+}
+#hr-person {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .contacts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .document-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 760px) {
+  .contacts-grid {
+    grid-template-columns: 1fr;
+  }
+  .document-row {
+    padding: 18px;
+  }
+  .report-controls {
+    padding: 18px;
+  }
+  .report-summary {
+    padding: 0 18px;
+  }
+  .document-panel .panel-heading {
+    flex-wrap: wrap;
+  }
+  .document-panel .panel-heading > div {
+    max-width: 100%;
+  }
+  .document-links {
+    flex-wrap: wrap;
+  }
+  .sidebar-bottom {
+    display: none;
+  }
+  nav a {
+    font-size: 10px;
+    flex-basis: 30%;
+  }
+}
+.report-summary .stat strong {
+  font-size: 30px;
+  overflow-wrap: anywhere;
+}
+.contact-card h2,
+.document-row > div {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+  #expense-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #expense-summary .stat {
+    padding: 16px;
+  }
+  #expense-summary .stat strong {
+    font-size: 25px;
+    overflow-wrap: anywhere;
+  }
+}
+/* The Ark Kharar: white signage, cyan light, deep reception blues, warm wood. */
+:root {
+  --ink: #142d45;
+  --muted: #667d8e;
+  --green: #087fa6;
+  --pale: #e9f6fa;
+  --line: #dce6ef;
+  --paper: #f4f7fb;
+}
+.sidebar {
+  background: linear-gradient(165deg, #071b30, #0a2b4d);
+  border-right: 1px solid #123f60;
+  color: #eefaff;
+  padding-top: 27px;
+}
+.brand {
+  display: block;
+  border-bottom: 1px solid #20506d;
+  padding: 0 0 25px;
+  min-height: 88px;
+}
+.business-logo {
+  display: block;
+  width: 100%;
+  max-width: 215px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 9px #00d9ee18);
+}
+.nav-caption {
+  color: #6e9fba;
+  margin-top: 30px;
+}
+nav a {
+  color: #a7c4d8;
+}
+nav a:hover {
+  background: #113c5c;
+  color: #fff;
+}
+nav a[aria-current="page"] {
+  background: #0c4865;
+  color: #83efff;
+  box-shadow: inset 3px 0 #27d9ed;
+}
+.nav-count {
+  background: #176482;
+  color: #beffff;
+}
+.sidebar-bottom,
+.sidebar-bottom p,
+.sidebar-bottom a {
+  color: #8eb4cb;
+}
+.environment-dot {
+  background: #35e5dd;
+  box-shadow: 0 0 6px #35e5dd88;
+}
+.workspace-label {
+  color: #31718d;
+}
+.topbar {
+  border-top: 3px solid #1bb9cf;
+}
+.heading .eyebrow {
+  color: #397c99;
+}
+.primary {
+  background: #0a3759;
+  color: #fff;
+  border-color: #15557b;
+}
+.primary:hover {
+  background: #0b5274;
+}
+.secondary:hover {
+  background: #e8f7fb;
+}
+.badge {
+  background: #e4f5fa;
+  color: #17647c;
+}
+.avatar {
+  background: #f3e9dc;
+  color: #937145;
+}
+.stat-top span {
+  color: #1f93b2;
+}
+.welcome-card {
+  background:
+    linear-gradient(90deg, #041b39e8, #041b39b5), url("/assets/ark-venue.png");
+  background-size: cover;
+  background-position: left center;
+  border-color: #173c62;
+  color: #f3fbff;
+  min-height: 320px;
+}
+.welcome-card .decorative-leaf {
+  display: none;
+}
+.welcome-card .eyebrow {
+  color: #6ae1f7;
+}
+.welcome-card p:not(.eyebrow) {
+  color: #c0d9e8;
+}
+.welcome-card .light {
+  background: #1fbcd0;
+  color: #052f48;
+  border-color: #60e4ed;
+}
+.eyebrow {
+  color: #598093;
+}
+.text-link {
+  color: #177b9b;
+}
+.venue-panel {
+  margin-top: 25px;
+}
+.venue-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  object-fit: cover;
+  object-position: center 45%;
+}
+.venue-address {
+  background: #fdfaf5;
+  padding: 23px 25px;
+  border-top: 1px solid #eadbc6;
+}
+.venue-address strong {
+  font:
+    24px Georgia,
+    serif;
+  color: #684b35;
+}
+.venue-address address {
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #75675a;
+  margin-top: 10px;
+}
+.venue-address .muted {
+  font-size: 10px;
+}
+.venue-panel .panel-heading {
+  background: #fff;
+}
+.success {
+  background: #e8f7f8;
+  color: #17666d;
+  border-color: #c5e5e9;
+}
+.contact-phone {
+  color: #117596;
+}
+@media (max-width: 760px) {
+  .sidebar {
+    padding: 20px 20px 11px;
+  }
+  .brand {
+    padding-bottom: 17px;
+    min-height: 0;
+    border-bottom: 0;
+  }
+  .business-logo {
+    width: 180px;
+    margin: auto;
+  }
+  .topbar {
+    border-top: 0;
+  }
+  .sidebar nav a {
+    font-size: 10px;
+  }
+  .venue-panel .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .venue-image {
+    max-height: none;
+    object-fit: contain;
+  }
+  .venue-address {
+    padding: 20px;
+  }
+  .venue-address strong {
+    font-size: 22px;
+  }
+}

@@ -3,12 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#294c40" />
+    <meta name="theme-color" content="#071b30" />
     <title>The Ark Salon &amp; Spa · Spa management</title>
     <link rel="icon" href="/logo.svg" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" defer></script>
     <script src="/operations.js" defer></script>
+    <script src="/administration.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -17,24 +18,13 @@
         class="brand"
         href="#overview"
         aria-label="The Ark Salon &amp; Spa home"
-        ><svg class="brand-symbol" viewBox="0 0 48 48" aria-hidden="true">
-          <path
-            d="M8 40V23a16 16 0 0 1 32 0v17M15 40V24a9 9 0 0 1 18 0v16M6 40h36"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-          <path
-            d="m19 34 5-13 5 13m-8-5h6"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          /></svg
-        ><span class="ark-wordmark"
-          ><span>THE <strong>ARK</strong></span
-          ><small>SALON &amp; SPA</small></span
-        ></a
-      >
+        ><img
+          class="business-logo"
+          src="/assets/ark-logo.png"
+          alt="The Ark Salon &amp; Spa"
+          width="210"
+          height="70"
+      /></a>
       <div class="nav-caption">WORKSPACE</div>
       <nav aria-label="Main navigation">
         <a href="#overview" data-view="overview"
@@ -52,6 +42,15 @@
         ><a href="#sales" data-view="sales"
           ><span aria-hidden="true">₹</span> Daily sales</a
         >
+        <a href="#hr" data-view="hr"
+          ><span aria-hidden="true">▤</span> Staff records</a
+        ><a href="#expenses" data-view="expenses"
+          ><span aria-hidden="true">−</span> Expenses</a
+        ><a href="#reports" data-view="reports"
+          ><span aria-hidden="true">↗</span> Reports &amp; exports</a
+        ><a href="#contacts" data-view="contacts"
+          ><span aria-hidden="true">☎</span> Emergency contacts</a
+        >
       </nav>
       <div class="sidebar-bottom">
         <span class="environment-dot"></span> Local workspace
@@ -67,7 +66,7 @@
           Workspace <span aria-hidden="true">/</span>
           <strong id="breadcrumb">Overview</strong>
         </div>
-        <span class="workspace-label">THE ARK SALON &amp; SPA</span>
+        <span class="workspace-label">KHARAR · PUNJAB</span>
       </header>
       <main id="main" tabindex="-1">
         <section class="heading">
@@ -171,6 +170,41 @@
               >
             </div>
             <div id="recent-confirmations"></div>
+          </section>
+          <section class="panel venue-panel" aria-labelledby="venue-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">THE ARK · KHARAR</p>
+                <h2 id="venue-title">
+                  A familiar space. A signature experience.
+                </h2>
+              </div>
+              <a
+                class="button secondary"
+                target="_blank"
+                rel="noopener"
+                href="https://www.google.com/maps/search/?api=1&amp;query=The+Ark+Salon+Spa+City+Heart+SCO+42+Kharar+Punjab+140301"
+                >View location ↗</a
+              >
+            </div>
+            <img
+              class="venue-image"
+              src="/assets/ark-venue.png"
+              alt="Adapted views of The Ark reception with blue lighting and the wood-panelled treatment room"
+              width="1536"
+              height="1024"
+              loading="lazy"
+            />
+            <div class="venue-address">
+              <strong>The Ark Salon &amp; Spa</strong>
+              <address>
+                1st Floor, City Heart, SCO 42, opposite DIGI HUT,<br />Janta
+                Nagar, Kharar, Punjab 140301, India.
+              </address>
+              <p class="muted">
+                Venue visuals adapted from the supplied photographs.
+              </p>
+            </div>
           </section>
         </section>
 
@@ -302,6 +336,9 @@
             <div class="panel-heading table-toolbar">
               <div>
                 <h2>Daily client register</h2>
+                <a class="text-link" href="#reports"
+                  >Export day, month or year CSV ↗</a
+                >
                 <p class="muted">
                   Record every attended visit and the amount collected in INR.
                 </p>
@@ -362,6 +399,224 @@
               visit.
             </div>
           </div>
+        </section>
+
+        <section id="hr-view" hidden aria-label="Staff records">
+          <div class="panel">
+            <div class="panel-heading table-toolbar">
+              <div>
+                <h2>Staff details, contracts &amp; salary</h2>
+                <p class="muted">
+                  Versioned employment drafts and salary structures. Currency:
+                  INR.
+                </p>
+              </div>
+              <div class="select-field">
+                <label for="hr-staff">Choose staff member</label
+                ><select id="hr-staff"></select>
+              </div>
+              <button class="button secondary" id="hr-refresh">Refresh</button
+              ><button class="button secondary" id="edit-staff">
+                Edit staff details
+              </button>
+            </div>
+            <div id="hr-person" class="panel-footer"></div>
+          </div>
+          <div id="hr-error" class="banner warning" role="status" hidden></div>
+          <div class="banner warning legal-note">
+            Punjab, India · Contract drafts require local legal review. Verify
+            current applicable laws, wage notifications, benefits and employment
+            terms. The app does not certify compliance or calculate statutory
+            rates.
+          </div>
+          <div class="panel document-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Employment contract drafts</h2>
+                <p class="muted">
+                  New versions preserve the saved employee name and role. PDFs
+                  include signature spaces.
+                </p>
+              </div>
+              <button class="button primary" id="new-contract">
+                ＋ Add contract
+              </button>
+            </div>
+            <div id="contract-list"></div>
+          </div>
+          <div class="panel document-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Salary structure &amp; annual CTC</h2>
+                <p class="muted">
+                  Historical versions, sorted by effective date. Employer
+                  contributions are part of CTC, not employee deductions.
+                </p>
+              </div>
+              <button class="button primary" id="new-salary">
+                ＋ Add salary structure
+              </button>
+            </div>
+            <div id="salary-list"></div>
+            <div class="panel-footer">
+              Structure estimates are not payslips or proof of payment. Enter
+              verified applicable deductions/contributions manually. Record
+              actual paid payroll under Expenses → Salary for profit/loss.
+            </div>
+          </div>
+        </section>
+        <section id="expenses-view" hidden aria-label="Daily expenses">
+          <div class="panel">
+            <div class="panel-heading table-toolbar">
+              <div>
+                <h2>Daily expenses</h2>
+                <p class="muted">
+                  Record amounts actually paid, including payroll and operating
+                  costs.
+                </p>
+              </div>
+              <label class="date-filter" for="expense-date"
+                >Expense date<input
+                  id="expense-date"
+                  type="date"
+                  required /></label
+              ><button class="button secondary" id="expense-refresh">
+                Refresh</button
+              ><button class="button primary" id="new-expense">
+                ＋ Add expense
+              </button>
+            </div>
+          </div>
+          <div
+            id="expense-error"
+            class="banner warning"
+            role="status"
+            hidden
+          ></div>
+          <div id="expense-summary" class="stats"></div>
+          <div class="panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount (INR)</th>
+                    <th>Payment</th>
+                  </tr>
+                </thead>
+                <tbody id="expense-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span class="muted" id="expense-page"></span>
+              <div>
+                <button class="button secondary" id="expense-previous">
+                  ← Previous</button
+                ><button class="button secondary" id="expense-next">
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="reports-view" hidden aria-label="Reports and exports">
+          <div class="panel document-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Sales CSV export</h2>
+                <p class="muted">
+                  All entries for the selected calendar period, including every
+                  page.
+                </p>
+              </div>
+            </div>
+            <div class="report-controls">
+              <div class="select-field">
+                <label for="export-period">Sales export period</label
+                ><select id="export-period">
+                  <option value="DAY">Day</option>
+                  <option value="MONTH">Month</option>
+                  <option value="YEAR">Year</option>
+                </select>
+              </div>
+              <label class="date-filter" for="export-date"
+                >Sales export date<input
+                  id="export-date"
+                  type="date"
+                  required /></label
+              ><a class="button primary" id="csv-download" download
+                >Download sales CSV</a
+              >
+            </div>
+          </div>
+          <div class="panel document-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Monthly profit / loss</h2>
+                <p class="muted">
+                  Recorded sales collections minus recorded expenses. INR.
+                </p>
+              </div>
+              <label class="date-filter" for="profit-month"
+                >Report month<input
+                  id="profit-month"
+                  type="month"
+                  required /></label
+              ><button class="button secondary" id="profit-refresh">
+                Refresh report
+              </button>
+            </div>
+            <div
+              id="report-error"
+              class="banner warning"
+              role="status"
+              hidden
+            ></div>
+            <div id="profit-summary" class="stats report-summary"></div>
+            <div id="profit-categories" class="report-controls"></div>
+            <div class="report-controls">
+              <a class="button primary" id="profit-download"
+                >Download P&amp;L PDF</a
+              ><a
+                class="button secondary"
+                id="profit-print"
+                target="_blank"
+                rel="noopener"
+                >Open / print PDF</a
+              >
+            </div>
+            <div class="panel-footer">
+              Management cash-based summary, not audited accounts or tax
+              statements. Payroll is included only when recorded as a SALARY
+              expense; saved CTC structures are not automatically deducted.
+              Inventory, depreciation, refunds, taxes, accruals and outstanding
+              amounts are not calculated.
+            </div>
+          </div>
+        </section>
+        <section id="contacts-view" hidden aria-label="Emergency contacts">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Emergency &amp; maintenance contacts</h2>
+                <p class="muted">
+                  Keep electricians, plumbers, medical and other useful contacts
+                  together.
+                </p>
+              </div>
+              <button class="button primary" id="new-contact">
+                ＋ Add contact
+              </button>
+            </div>
+          </div>
+          <div
+            id="contact-error"
+            class="banner warning"
+            role="status"
+            hidden
+          ></div>
+          <div id="contacts-list" class="contacts-grid"></div>
         </section>
         <footer class="footer">
           <span>Thoughtfully scheduled. Beautifully simple.</span
@@ -622,6 +877,32 @@
             Cancel</button
           ><button class="button primary" type="submit" id="save-sale">
             Save client entry
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="admin-dialog" aria-labelledby="admin-title">
+      <form id="admin-form">
+        <div class="dialog-heading">
+          <h2 id="admin-title"></h2>
+          <button
+            class="icon-button"
+            type="button"
+            id="admin-close"
+            aria-label="Close details form"
+          >
+            ✕
+          </button>
+        </div>
+        <p id="admin-help" class="muted"></p>
+        <div id="admin-error" class="banner warning" role="alert" hidden></div>
+        <div id="admin-fields" class="form-grid"></div>
+        <div id="salary-preview" class="banner success" hidden></div>
+        <div class="dialog-footer">
+          <button class="button secondary" type="button" id="admin-cancel">
+            Cancel</button
+          ><button class="button primary" type="submit" id="admin-save">
+            Save record
           </button>
         </div>
       </form>

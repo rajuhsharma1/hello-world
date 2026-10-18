@@ -128,7 +128,7 @@ For a corporate/cloud network proxy, Docker builds support optional BuildKit sec
 
 ## Development scope and operations
 
-This is an unauthenticated local development starter, not a production deployment. Customer accounts, catalog management, authentication, refunds, cancellations, payroll, and SMS delivery are not implemented. Scheduling prevents identical start times, not overlapping intervals. Do not expose APIs or observability endpoints publicly. Default PostgreSQL/Grafana passwords and plaintext Kafka are for isolated development. Override `DB_PASSWORD` and `GRAFANA_PASSWORD` in an ignored `.env` before first startup if desired. Existing database passwords require an explicit database-user update or new development volumes.
+This is an unauthenticated local development starter, not a production deployment. Customer accounts, catalog management, authentication, refunds, cancellations, payroll processing, and SMS delivery are not implemented. Salary/CTC structures and print-ready documents are available; they are not automated payroll. Scheduling prevents identical start times, not overlapping intervals. Do not expose APIs or observability endpoints publicly. Default PostgreSQL/Grafana passwords and plaintext Kafka are for isolated development. Override `DB_PASSWORD` and `GRAFANA_PASSWORD` in an ignored `.env` before first startup if desired. Existing database passwords require an explicit database-user update or new development volumes.
 
 The booking and outbox insert share a transaction. The publisher retries pending events after Kafka failures. Delivery is at least once; a crash between sending and marking sent can cause duplicates. Notification inserts use a unique appointment ID with `ON CONFLICT DO NOTHING`. Malformed events retry indefinitely and require operator intervention. Run one booking-service instance; multiple publishers need database claiming/locking. Long-running deployments need sent-outbox retention.
 
@@ -146,8 +146,55 @@ Add staff from **Staff attendance → Add staff** before recording their attenda
 
 The salon business time zone defaults to **Asia/Kolkata** (`SPA_ZONE` in Compose). Attendance times are salon-local; appointment times continue to display in the browser's local time zone. Registers accept today or past dates, not future entries. A sales entry represents one attended client visit, including walk-ins; appointments do not automatically count as attended or paid. Choose the staff member, enter the service and amount received, and choose UPI, cash or card. Payment recording does not initiate any charge. Amounts must be positive with at most two decimal places. Totals include every entry for the chosen date, across all pages, and remain separated by payment method. INR is the register currency.
 
-Each sale uses a request UUID to prevent the same submission from being recorded twice. Replaying the same UUID/details returns the saved entry; different details with that UUID return 409. Sales are append-only in this version; edits, refunds, split payments, CSV export and reconciliation are not implemented. A customer can have multiple legitimate visits, so the client count is a count of attended visits rather than unique people.
+Each sale uses a request UUID to prevent the same submission from being recorded twice. Replaying the same UUID/details returns the saved entry; different details with that UUID return 409. Sales are append-only in this version; edits, refunds, split payments and reconciliation are not implemented. Day/month/year CSV export is available under Reports & exports. A customer can have multiple legitimate visits, so the client count is a count of attended visits rather than unique people.
 
 ## Upgrade existing installations
 
 Pull the branch and run `docker compose up --build -d`. Flyway automatically adds contact-number columns and the new operations database schema; **do not delete volumes to upgrade**. Appointments and confirmations now expose `contactNumber`, with 7–15 digits and an optional leading `+` for new records. Email fields are removed from the forms, active API models, and new events. Earlier records show **Not recorded** because their contact numbers are unknown. Historical email columns remain private in existing databases so the upgrade does not destroy previously collected data; they are not used for new entries. The Kafka consumer also accepts pending older events without a contact number.
+
+## Staff records, contracts and salary structures
+
+Open **Staff records**, choose an employee, and use **Edit staff details** to update their name, role, contact number, address or joining date. Existing attendance and sales retain the same staff ID. Saved contracts and salary structures preserve employee-name snapshots so later profile edits do not silently rewrite historical documents.
+
+**Add contract** creates a versioned English employment draft configured for **Punjab, India**, with employer/establishment reference, workplace and employee address/contact, employment dates/type, probation, notice, working hours/breaks/overtime, weekly rest, leave, remuneration, statutory-benefit applicability, termination/grievance and confidentiality terms. Required terms are entered by the user. No current minimum-wage rates, EPF/ESI eligibility, leave quotas or other statutory entitlements are inferred. Mandatory rights prevail over conflicting draft terms. Contracts remain marked **DRAFT — FOR LOCAL LEGAL REVIEW**; have a qualified Punjab adviser review current applicable laws/notifications and the establishment's circumstances before signing or using them. The app does not certify legal compliance or provide a substitute for legal advice.
+
+**Add salary structure** stores a dated version with annual CTC, monthly basic, HRA, allowances, employer contributions, employee deductions and annual bonus:
+
+- Annual CTC = 12 × (basic + HRA + allowances + employer contributions) + annual bonus.
+- Monthly gross = basic + HRA + allowances.
+- Indicative monthly take-home = gross − employee deductions.
+- Employer contributions are part of CTC and do not reduce take-home. Contributions and deductions must be entered using verified applicable amounts; tax or statutory rates are not calculated.
+
+CTC must match the components exactly, monthly gross must be positive, and deductions cannot exceed gross. Salary documents are structures, not payslips or proof of payment. New versions preserve historical structures; lists are sorted by effective date and can include future proposals.
+
+Contracts and salary structures have **Download PDF** and **Open / print PDF** actions. The latter opens the browser PDF viewer, where you can print. Documents include version/staff references and blank signature/acknowledgement spaces. PDFs use bundled DejaVu Sans with its included licence. English/Latin-script documents and the INR rupee symbol are tested; unsupported characters return an explicit error instead of silently changing names. No Punjabi-language legal translation or shaping is provided.
+
+## Daily expenses, exports and monthly profit/loss
+
+Use **Expenses** to record amounts actually paid under RENT, SALARY, UTILITIES, SUPPLIES, MAINTENANCE or OTHER, with a description and UPI/cash/card payment method. The date must be today or a past salon business date. Daily totals include every page; expense entries are append-only and use request IDs to avoid duplicate submissions. To include payroll in profit/loss, record actual paid payroll once as a SALARY expense. Saving a CTC/salary structure does **not** automatically book an expense.
+
+Use **Reports & exports** to download **day, month or calendar-year sales CSVs**, including all matching records rather than the visible 50-row page. CSVs are UTF-8 with a BOM for spreadsheet compatibility, quote embedded commas/quotes/newlines, preserve phone numbers as text, and neutralize formula-leading cells. Phone strings may include a leading spreadsheet apostrophe in raw CSV readers. The selected year is a calendar year, not the Indian financial year.
+
+The monthly profit/loss report uses **recorded sales collections − recorded expenses**. It shows category totals, revenue, expenses and operating profit/loss, with download and print-ready PDF actions. This is a management cash-based summary, not audited accounts or a statutory tax return. Refunds, outstanding payments, taxes, inventory, depreciation and accrual adjustments are not calculated. Do not deduct saved CTC budgets as well as actual payroll expenses.
+
+## Emergency and maintenance contacts
+
+Use **Emergency contacts** to add or update electricians, plumbers, AC technicians, medical, security and other contacts. Store the name/trade, primary and optional secondary phone, service area/address and notes. Phone links open the device dialler. Contact numbers accept 3–15 digits (optional leading `+`) to accommodate short emergency numbers; employee/client contact fields still require 7–15 digits. The directory is manually maintained and does not verify service availability.
+
+## Additional API endpoints and checks
+
+- `PUT /api/staff/{id}` updates profile fields.
+- `GET/POST /api/contracts` and `GET/POST /api/salaries` list/create versions; list requests require `staffId`.
+- `/api/contracts/{id}/pdf` and `/api/salaries/{id}/pdf` return inline printable PDFs; add `?download=true` for downloads.
+- `GET /api/expenses?date=YYYY-MM-DD&page=0` and `POST /api/expenses` list/create paid expenses.
+- `GET/POST /api/contacts`, `PUT/DELETE /api/contacts/{id}` manage the directory.
+- `/api/reports/sales.csv?period=DAY|MONTH|YEAR&date=YYYY-MM-DD` exports a complete period.
+- `/api/reports/profit-loss?date=YYYY-MM-DD` returns the selected calendar month's recorded result; `/api/reports/profit-loss.pdf?date=YYYY-MM-DD&download=true` downloads its PDF.
+
+Run `python3 scripts/administration-smoke.py` after the existing smoke checks. It intentionally creates HR test records, expenses, 52 test sales and a next-month boundary sale on historical dates to verify complete CSV exports and exact P&L changes. Six Playwright tests now include the HR/finance/directory workflows. Twelve backend tests cover outbox/attendance, CTC validation, calendar boundaries, CSV escaping and multi-page PDF content.
+
+The app still publishes only port **8080**. Pull and run `docker compose up --build -d` to apply the new Flyway migration; do not delete database volumes. Profiles, salary/contract PDFs and CSVs contain confidential information. This remains an unauthenticated, loopback-only development app; add access controls and appropriate data handling before any shared or production use.
+
+## Venue styling and supplied images
+
+The UI uses the supplied Ark sign and reception/treatment-room photos as references for deep navy, cyan, white and warm wood styling. `ui/assets/ark-logo.png` is an AI-assisted reconstruction of the photographed sign, and `ark-venue.png` is an adapted two-photo venue diptych; they are not original master assets or unmodified Google Maps photos. Source notes are in `ui/assets/SOURCES.md`. The overview includes the supplied Kharar address and a Google Maps search link. The listing could not be fetched from the cloud environment, so no additional Google images, live review counts or current opening hours are asserted.

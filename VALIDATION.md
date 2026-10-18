@@ -1,15 +1,15 @@
 # Validation
 
-Validated The Ark Salon & Spa changes against the complete container stack:
+Validated the complete The Ark Salon & Spa development stack, including HR, finance, reporting and updated visual assets:
 
-- All Maven modules built. Eight backend tests passed (three booking/outbox tests and five operations tests), with no failures or skips.
-- All four application images built: booking-service, notification-service, operations-service and gateway. Cloud-only Maven proxy settings and trusted CA stores were supplied through private BuildKit secrets; TLS verification remained enabled.
-- Flyway upgraded both existing appointment and notification databases. All three pre-upgrade rows in each database were preserved; subsequent test bookings increased those counts. Active appointment responses contain `contactNumber` and omit `customerEmail`. Historical email values remain private in legacy database columns rather than being destroyed by the migration.
-- The normal Compose deployment runs all three APIs and PostgreSQL databases, Kafka, Grafana, Loki, Zipkin and Fluent Bit. Only the gateway publishes host port 8080.
-- The gateway smoke test passed: branding/UI served, all three service health endpoints UP, booking/read/conflict handling, Kafka notification persistence, a cross-service consumer trace and application logs in Loki.
-- Operations smoke checks passed against PostgreSQL: attendance hours, update-in-place without duplicate daily attendance, invalid shift rejection, exact UPI/cash/card totals, repeated sales requests without duplicate entries, and invalid amounts rejected.
-- Four Chromium browser tests passed: booking/contact/confirmation/conflict; partial notification failure and safe text rendering; mobile layout and keyboard dialog controls; staff creation, attendance updates and persisted daily client entries using all payment methods.
-- Desktop and mobile screenshots of attendance and daily sales were inspected. No horizontal page overflow was observed at 390px; wide register tables scroll within their panels.
-- JavaScript syntax, Compose configuration, and whitespace checks passed. CI runs Maven, gateway and operations smoke checks, then browser tests.
+- Maven `verify` passed: 12 backend tests, none failed or skipped. New coverage checks CSV quoting/formula neutralization, leap-year/calendar boundaries, CTC consistency and multi-page PDF content including INR symbols and long text.
+- Operations-service and gateway images rebuilt successfully with the PDF library and licensed bundled font. Cloud builds used private BuildKit proxy settings and a trusted CA store; TLS verification remained enabled. Unused Docker build cache was cleared after the cloud disk filled; application volumes and data were retained.
+- The operations Flyway migration added staff profile fields, versioned contracts/salary structures, expense records and emergency contacts without deleting existing records.
+- The gateway and operations smoke suites passed: appointment/contact persistence, conflicts, Kafka notifications, tracing, logs, attendance updates/hours, exact daily collection totals and duplicate-request protection.
+- Administration smoke checks passed against real PostgreSQL and the gateway: staff editing; contract/salary PDF inline and attachment responses; invalid CTC rejection; contact creation/update including short emergency numbers; expense replay protection; exact monthly revenue/expense/profit changes; complete day/month/year CSV exports beyond the 50-row page limit; next-month exclusion/month versus year inclusion; escaped formula text and phone preservation.
+- All six Chromium browser tests passed. New workflows include staff profile editing, CTC preview/save, real salary/contract PDF downloads, daily expenses, monthly profit/loss PDF, CSV period selection and emergency contact updates. Existing booking, attendance, sales, mobile, keyboard and safe-text-rendering tests still pass.
+- The user supplied the jurisdiction (Punjab, India), venue references and address. Contract outputs are explicit English drafts requiring local legal review; no current legal rates or statutory applicability were certified.
+- Updated desktop overview and mobile reporting screenshots were inspected; no browser JavaScript errors or horizontal mobile page overflow were observed.
+- Venue images are clearly documented as adapted assets based on supplied photos. Google access was blocked, and no scraped images/current ratings or opening hours were claimed.
 
-Attendance times and business dates default to Asia/Kolkata. Appointment times use the browser's local time zone. Sales record payments already received; they do not collect payments or process refunds. Authentication, payroll, split payments and SMS delivery remain outside this development starter. See README.md for startup and upgrade instructions.
+The deployment continues to publish only gateway port 8080. PDFs and exports contain sensitive staff/client information; the starter has no authentication and is intended for isolated development. Reports reflect recorded cash-based operations, not audited or statutory accounts. Salary structures are budgets, separate from actual payroll expenses. See README.md for calculations, upgrade instructions and limitations.

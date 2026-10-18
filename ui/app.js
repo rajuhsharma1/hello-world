@@ -45,6 +45,11 @@
     }
     if (!response.ok) {
       if (
+        path.startsWith("/api/contracts") ||
+        path.startsWith("/api/salaries") ||
+        path.startsWith("/api/expenses") ||
+        path.startsWith("/api/contacts") ||
+        path.startsWith("/api/reports") ||
         path.startsWith("/api/staff") ||
         path.startsWith("/api/attendance") ||
         path.startsWith("/api/sales")
@@ -66,7 +71,7 @@
         "The service is temporarily unavailable. Please try again shortly.",
       );
     }
-    return response.json();
+    return response.status === 204 ? null : response.json();
   }
   function notice(message) {
     $("notice").textContent = message;
@@ -277,10 +282,34 @@
       "notifications",
       "attendance",
       "sales",
+      "hr",
+      "expenses",
+      "reports",
+      "contacts",
     ].includes(view)
       ? view
       : "overview";
     const titles = {
+      hr: [
+        "Your people, properly documented.",
+        "Staff profiles, employment drafts and salary structures.",
+        "Staff records",
+      ],
+      expenses: [
+        "Keep track of the everyday costs.",
+        "Daily expenses, paid and recorded.",
+        "Expenses",
+      ],
+      reports: [
+        "A clearer view of your business.",
+        "Sales exports and monthly operating results.",
+        "Reports & exports",
+      ],
+      contacts: [
+        "The right person, when you need them.",
+        "Emergency and maintenance contacts for The Ark.",
+        "Emergency contacts",
+      ],
       attendance: [
         "A team that’s ready for the day.",
         "Daily attendance and working hours at The Ark.",
@@ -313,6 +342,10 @@
       "notifications",
       "attendance",
       "sales",
+      "hr",
+      "expenses",
+      "reports",
+      "contacts",
     ])
       $(`${key}-view`).hidden = key !== current;
     document.querySelectorAll("[data-view]").forEach((a) => {

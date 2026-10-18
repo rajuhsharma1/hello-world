@@ -233,3 +233,211 @@ test("staff attendance and daily client sales split UPI, cash and card", async (
     `Client CARD ${staffName}`,
   );
 });
+
+test("staff details, Punjab contract drafts and salary PDF downloads", async ({
+  page,
+  request,
+}, testInfo) => {
+  const staffName = "HR Browser " + randomUUID().slice(0, 8);
+  const staff = await (
+    await request.post("/api/staff", {
+      data: { name: staffName, role: "Stylist" },
+    })
+  ).json();
+  await page.goto("/#hr");
+  await page
+    .getByLabel("Choose staff member", { exact: true })
+    .selectOption(staff.id);
+  await expect(page.locator("#hr-person")).toContainText(staffName);
+  await page
+    .getByRole("button", { name: "Edit staff details", exact: true })
+    .click();
+  await page
+    .getByLabel("Staff full name", { exact: true })
+    .fill("Updated " + staffName);
+  await page
+    .getByLabel("Role / designation", { exact: true })
+    .fill("Senior stylist");
+  await page
+    .getByLabel("Staff contact number", { exact: true })
+    .fill("+919876543225");
+  await page
+    .getByLabel("Staff address", { exact: true })
+    .fill("Employee address, Punjab");
+  await page.getByLabel("Joining date", { exact: true }).fill("2020-01-01");
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  await expect(page.locator("#hr-person")).toContainText(
+    "Updated " + staffName,
+  );
+  await page.getByRole("button", { name: /Add salary structure/ }).click();
+  for (const [label, value] of [
+    ["Annual CTC (INR)", "360000"],
+    ["Monthly basic (INR)", "20000"],
+    ["Monthly HRA (INR)", "5000"],
+    ["Monthly allowances (INR)", "5000"],
+    ["Monthly employee deductions (INR)", "1000"],
+  ])
+    await page.getByLabel(label, { exact: true }).fill(value);
+  await expect(page.locator("#salary-preview")).toContainText("₹29,000.00");
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  await expect(page.locator("#salary-list")).toContainText("₹3,60,000.00");
+  const salaryDownload = page.waitForEvent("download");
+  await page
+    .locator("#salary-list")
+    .getByRole("link", { name: "Download PDF", exact: true })
+    .first()
+    .click();
+  const salary = await salaryDownload;
+  await salary.saveAs(testInfo.outputPath("salary.pdf"));
+  expect(
+    require("node:fs")
+      .readFileSync(testInfo.outputPath("salary.pdf"))
+      .subarray(0, 5)
+      .toString(),
+  ).toBe("%PDF-");
+  const printPath = await page
+    .locator("#salary-list")
+    .getByRole("link", { name: "Open / print PDF", exact: true })
+    .first()
+    .getAttribute("href");
+  expect(
+    (await request.get(printPath)).headers()["content-disposition"],
+  ).toContain("inline");
+  await page.getByRole("button", { name: /Add contract/ }).click();
+  for (const [label, value] of [
+    ["Employer legal name", "The Ark Salon & Spa"],
+    ["Notice days", "30"],
+    ["Establishment registration / licence reference", "BROWSER-TEST"],
+    ["Registered workplace address", "Workplace address, Punjab"],
+    ["Employee residential address", "Employee address, Punjab"],
+    ["Employee contact number", "+919876543225"],
+    [
+      "Working hours, breaks & overtime terms",
+      "Draft working terms for local legal review.",
+    ],
+    ["Weekly rest day / terms", "Subject to verified applicable entitlement."],
+    ["Leave and holiday entitlement", "To be confirmed by local adviser."],
+    [
+      "Pay, payment date & remuneration terms",
+      "As per reviewed salary structure.",
+    ],
+    [
+      "Applicable statutory benefits (EPF/ESI etc.)",
+      "Applicability to be verified locally.",
+    ],
+    [
+      "Termination, notice & grievance terms",
+      "Subject to mandatory law and local review.",
+    ],
+    [
+      "Confidentiality & workplace conduct terms",
+      "Reasonable confidentiality subject to law.",
+    ],
+  ])
+    await page.getByLabel(label, { exact: true }).fill(value);
+  await expect(page.getByLabel("Jurisdiction", { exact: true })).toHaveValue(
+    "Punjab, India",
+  );
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  await expect(page.locator("#contract-list")).toContainText("Draft contract");
+  const contractDownload = page.waitForEvent("download");
+  await page
+    .locator("#contract-list")
+    .getByRole("link", { name: "Download PDF", exact: true })
+    .click();
+  expect((await contractDownload).suggestedFilename()).toMatch(
+    /^ark-contract-.*\.pdf$/,
+  );
+});
+
+test("daily expenses, monthly P&L PDF, CSV periods and emergency contacts", async ({
+  page,
+  request,
+}) => {
+  const tag = randomUUID().slice(0, 8),
+    day = "2004-05-01";
+  const before = await (
+    await request.get("/api/reports/profit-loss?date=" + day)
+  ).json();
+  await page.goto("/#expenses");
+  await page.getByRole("button", { name: /Add expense/ }).click();
+  await page.getByLabel("Date paid", { exact: true }).fill(day);
+  await page
+    .getByLabel("Expense category", { exact: true })
+    .selectOption("SUPPLIES");
+  await page
+    .getByLabel("Expense description", { exact: true })
+    .fill("Browser supplies " + tag);
+  await page.getByLabel("Amount paid (INR)", { exact: true }).fill("150.25");
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  await expect(page.locator("#expense-body")).toContainText(
+    "Browser supplies " + tag,
+  );
+  await page.getByRole("link", { name: /Reports & exports/ }).click();
+  await page.getByLabel("Report month", { exact: true }).fill("2004-05");
+  await page.getByLabel("Report month", { exact: true }).press("Tab");
+  const after = await (
+    await request.get("/api/reports/profit-loss?date=" + day)
+  ).json();
+  expect(after.expenses).toBeCloseTo(before.expenses + 150.25, 2);
+  await expect(page.locator("#profit-summary")).toContainText(
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(after.expenses),
+  );
+  const pdf = page.waitForEvent("download");
+  await page
+    .getByRole("link", { name: "Download P&L PDF", exact: true })
+    .click();
+  expect((await pdf).suggestedFilename()).toContain("ark-profit-loss");
+  for (const period of ["MONTH", "YEAR"]) {
+    await page
+      .getByLabel("Sales export period", { exact: true })
+      .selectOption(period);
+    await page
+      .getByLabel("Sales export date", { exact: true })
+      .fill(period === "MONTH" ? "2004-05" : "2004");
+    const csv = page.waitForEvent("download");
+    await page
+      .getByRole("link", { name: "Download sales CSV", exact: true })
+      .click();
+    expect((await csv).suggestedFilename()).toBe(
+      "ark-sales-" + (period === "MONTH" ? "2004-05" : "2004") + ".csv",
+    );
+  }
+  await page.getByRole("link", { name: /Emergency contacts/ }).click();
+  await page.getByRole("button", { name: /Add contact/ }).click();
+  await page
+    .getByLabel("Contact person / business", { exact: true })
+    .fill("Plumber " + tag);
+  await page.getByLabel("Service / trade", { exact: true }).fill("Plumber");
+  await page.getByLabel("Primary phone", { exact: true }).fill("112");
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  const card = page
+    .locator(".contact-card")
+    .filter({ hasText: "Plumber " + tag });
+  await expect(
+    card.getByRole("link", { name: "112", exact: true }),
+  ).toHaveAttribute("href", "tel:112");
+  await card.getByRole("button", { name: "Edit contact", exact: true }).click();
+  await page
+    .getByLabel("Service / trade", { exact: true })
+    .fill("Plumber / maintenance");
+  await page.getByRole("button", { name: "Save record", exact: true }).click();
+  await expect(page.locator("#admin-dialog")).toBeHidden();
+  await expect(card).toContainText("Plumber / maintenance");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#reports");
+  await expect(page.locator("#profit-summary .stat")).toHaveCount(3);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
