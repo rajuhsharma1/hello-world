@@ -865,3 +865,107 @@ svg.decorative-leaf {
 .select-field select {
   margin-top: 8px;
 }
+/* The Ark wordmark and daily operations screens. */
+.ark-wordmark {
+  font-family: Georgia, serif;
+  letter-spacing: 2px;
+  font-size: 19px;
+  white-space: nowrap;
+  display: block;
+}
+.ark-wordmark > span {
+  display: block;
+}
+.ark-wordmark strong {
+  font-size: 27px;
+  font-weight: 500;
+}
+.brand .ark-wordmark small {
+  letter-spacing: 3px;
+  font-size: 8px;
+  margin-top: 3px;
+}
+.ark-wordmark + small {
+  display: block;
+}
+.brand {
+  gap: 9px;
+}
+.brand svg.brand-symbol {
+  width: 34px;
+  height: 44px;
+  color: #9c824c;
+}
+.operations-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+.operations-stats .stat {
+  padding: 20px 16px;
+}
+.operations-stats .stat strong {
+  font-size: 27px;
+  overflow-wrap: anywhere;
+}
+.date-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.date-filter input {
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 9px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.ops-zone {
+  margin: 13px 0 20px;
+}
+.money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+#attendance-body .button {
+  min-height: 32px;
+  padding: 8px 11px;
+  font-size: 10px;
+}
+@media (max-width: 1100px) {
+  .operations-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .brand .ark-wordmark {
+    font-size: 16px;
+  }
+  .brand .ark-wordmark strong {
+    font-size: 24px;
+  }
+}
+@media (max-width: 760px) {
+  nav {
+    flex-wrap: wrap;
+  }
+  nav a {
+    flex: 1 1 30%;
+    white-space: nowrap;
+  }
+  .operations-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .operations-stats .stat strong {
+    font-size: 25px;
+  }
+  .table-toolbar .date-filter {
+    margin-right: auto;
+  }
+  .table-toolbar .date-filter input {
+    min-width: 145px;
+  }
+}

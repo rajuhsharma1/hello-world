@@ -44,6 +44,16 @@
       );
     }
     if (!response.ok) {
+      if (
+        path.startsWith("/api/staff") ||
+        path.startsWith("/api/attendance") ||
+        path.startsWith("/api/sales")
+      ) {
+        const problem = await response.json().catch(() => ({}));
+        throw new Error(
+          problem.detail || "Check the entry details and try again.",
+        );
+      }
       if (response.status === 409)
         throw new Error(
           "This therapist already has an appointment at that time. Please choose another time.",
@@ -125,7 +135,7 @@
     }
     const term = $("search").value.trim().toLocaleLowerCase();
     const filtered = state.appointments.filter((a) =>
-      [a.customerName, a.customerEmail, a.treatment, a.therapist].some((v) =>
+      [a.customerName, a.contactNumber, a.treatment, a.therapist].some((v) =>
         v.toLocaleLowerCase().includes(term),
       ),
     );
@@ -134,7 +144,7 @@
     for (const appointment of filtered) {
       const row = el("tr");
       const guest = el("td", "", appointment.customerName);
-      guest.append(el("small", "", appointment.customerEmail));
+      guest.append(el("small", "", appointment.contactNumber));
       const when = el("td", "", date.format(new Date(appointment.startsAt)));
       when.append(el("small", "", time.format(new Date(appointment.startsAt))));
       const status = el("td");
@@ -179,7 +189,7 @@
       el(
         "p",
         "",
-        `${notification.customerEmail} · Booking ${notification.appointmentId.slice(0, 8)}`,
+        `${notification.contactNumber} · Booking ${notification.appointmentId.slice(0, 8)}`,
       ),
     );
     row.append(
@@ -261,10 +271,26 @@
   }
   function navigate() {
     const view = location.hash.slice(1);
-    const current = ["overview", "appointments", "notifications"].includes(view)
+    const current = [
+      "overview",
+      "appointments",
+      "notifications",
+      "attendance",
+      "sales",
+    ].includes(view)
       ? view
       : "overview";
     const titles = {
+      attendance: [
+        "A team that’s ready for the day.",
+        "Daily attendance and working hours at The Ark.",
+        "Staff attendance",
+      ],
+      sales: [
+        "Every visit. Every payment.",
+        "Your daily client register and payment totals.",
+        "Daily sales",
+      ],
       overview: [
         "A calmer way to manage your day.",
         "Appointments, people, and the moments in between.",
@@ -281,7 +307,13 @@
         "Confirmations",
       ],
     };
-    for (const key of ["overview", "appointments", "notifications"])
+    for (const key of [
+      "overview",
+      "appointments",
+      "notifications",
+      "attendance",
+      "sales",
+    ])
       $(`${key}-view`).hidden = key !== current;
     document.querySelectorAll("[data-view]").forEach((a) => {
       if (a.dataset.view === current) a.setAttribute("aria-current", "page");
@@ -292,7 +324,8 @@
       $("page-description").textContent,
       $("breadcrumb").textContent,
     ] = titles[current];
-    document.title = `${titles[current][2]} · Stillwater`;
+    window.dispatchEvent(new CustomEvent("ark:view", { detail: current }));
+    document.title = `${titles[current][2]} · The Ark Salon & Spa`;
   }
   function openBooking() {
     $("booking-form").reset();
@@ -323,7 +356,7 @@
     const fields = Object.fromEntries(new FormData(event.currentTarget));
     for (const key of [
       "customerName",
-      "customerEmail",
+      "contactNumber",
       "therapist",
       "treatment",
     ])
@@ -389,6 +422,7 @@
   })
     .format(new Date())
     .toUpperCase();
+  window.Ark = { api, el, notice };
   navigate();
   Promise.all([loadAppointments(), loadNotifications()]);
   setInterval(() => {

@@ -23,7 +23,7 @@ public class NotificationConsumer {
  @KafkaListener(topics="spa.appointments.v1")
  public void receive(String payload) throws Exception {
   var event=json.readTree(payload);var id=UUID.fromString(event.required("id").asText());
-  int inserted=jdbc.update("insert into notification(id,appointment_id,customer_email,message,created_at) values (?,?,?,?,now()) on conflict (appointment_id) do nothing",UUID.randomUUID(),id,event.required("customerEmail").asText(),"Appointment confirmed: "+event.required("treatment").asText());
+  int inserted=jdbc.update("insert into notification(id,appointment_id,contact_number,message,created_at) values (?,?,?,?,now()) on conflict (appointment_id) do nothing",UUID.randomUUID(),id,event.path("contactNumber").asText("Not recorded"),"Appointment confirmed: "+event.required("treatment").asText());
   log.info("Appointment notification processed appointmentId={} created={}",id,inserted==1);
  }
 }

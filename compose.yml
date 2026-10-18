@@ -8,6 +8,7 @@ services:
     depends_on:
       - booking-service
       - notification-service
+      - operations-service
       - grafana
       - zipkin
       - loki
@@ -28,6 +29,25 @@ services:
     environment: *db-env
     volumes: ["notification-data:/var/lib/postgresql/data"]
     healthcheck: *db-health
+  operations-db:
+    image: postgres:17.6
+    environment: *db-env
+    volumes: ["operations-data:/var/lib/postgresql/data"]
+    healthcheck: *db-health
+  operations-service:
+    build:
+      context: .
+      dockerfile: operations-service/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://operations-db:5432/spa
+      DB_PASSWORD: ${DB_PASSWORD:-spa_dev_only}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      LOGGING_FILE_NAME: /logs/operations.log
+      SPA_ZONE: ${SPA_ZONE:-Asia/Kolkata}
+    volumes: ["app-logs:/logs"]
+    depends_on:
+      storage-init: {condition: service_completed_successfully}
+      operations-db: {condition: service_healthy}
   storage-init:
     image: apache/kafka:3.9.1
     user: "0:0"
@@ -115,6 +135,7 @@ services:
       notification-db: {condition: service_healthy}
       kafka: {condition: service_healthy}
 volumes:
+  operations-data:
   booking-data:
   notification-data:
   kafka-data:

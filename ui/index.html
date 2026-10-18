@@ -4,30 +4,36 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#294c40" />
-    <title>Stillwater · Spa management</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23294c40'/%3E%3Cpath d='M20 29C8 24 10 15 11 13c6 0 9 5 9 5s3-5 9-5c1 2 3 11-9 16Z' fill='%23e2d6b5'/%3E%3C/svg%3E"
-    />
+    <title>The Ark Salon &amp; Spa · Spa management</title>
+    <link rel="icon" href="/logo.svg" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" defer></script>
+    <script src="/operations.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <aside class="sidebar">
-      <a class="brand" href="#overview" aria-label="Stillwater home"
+      <a
+        class="brand"
+        href="#overview"
+        aria-label="The Ark Salon &amp; Spa home"
         ><svg class="brand-symbol" viewBox="0 0 48 48" aria-hidden="true">
           <path
-            fill="currentColor"
-            d="M24 40C12 34 8 24 10 14c8 0 14 6 14 6s6-6 14-6c2 10-2 20-14 26Z"
-          />
-          <path
+            d="M8 40V23a16 16 0 0 1 32 0v17M15 40V24a9 9 0 0 1 18 0v16M6 40h36"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
-            d="M24 36C16 24 17 13 24 5c7 8 8 19 0 31Z"
+          />
+          <path
+            d="m19 34 5-13 5 13m-8-5h6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
           /></svg
-        ><span>stillwater<small>SPA MANAGEMENT</small></span></a
+        ><span class="ark-wordmark"
+          ><span>THE <strong>ARK</strong></span
+          ><small>SALON &amp; SPA</small></span
+        ></a
       >
       <div class="nav-caption">WORKSPACE</div>
       <nav aria-label="Main navigation">
@@ -40,6 +46,11 @@
         <a href="#notifications" data-view="notifications"
           ><span aria-hidden="true">◇</span> Confirmations
           <span class="nav-count" id="nav-count">0</span></a
+        >
+        <a href="#attendance" data-view="attendance"
+          ><span aria-hidden="true">◷</span> Staff attendance</a
+        ><a href="#sales" data-view="sales"
+          ><span aria-hidden="true">₹</span> Daily sales</a
         >
       </nav>
       <div class="sidebar-bottom">
@@ -56,7 +67,7 @@
           Workspace <span aria-hidden="true">/</span>
           <strong id="breadcrumb">Overview</strong>
         </div>
-        <span class="workspace-label">STILLWATER SPA</span>
+        <span class="workspace-label">THE ARK SALON &amp; SPA</span>
       </header>
       <main id="main" tabindex="-1">
         <section class="heading">
@@ -225,8 +236,130 @@
             </div>
             <div id="all-confirmations"></div>
             <div class="panel-footer">
-              These are saved confirmation records. Email and SMS delivery are
-              not enabled.
+              These are saved confirmation records. SMS delivery is not enabled.
+            </div>
+          </div>
+        </section>
+
+        <section id="attendance-view" hidden aria-label="Staff attendance">
+          <div class="panel">
+            <div class="panel-heading table-toolbar">
+              <div>
+                <h2>Staff attendance</h2>
+                <p class="muted">
+                  Mark present, absent or leave. Update check-out when the shift
+                  ends.
+                </p>
+              </div>
+              <label class="date-filter" for="attendance-date"
+                >Business date<input
+                  id="attendance-date"
+                  type="date"
+                  required /></label
+              ><button class="button secondary" id="refresh-attendance">
+                Refresh</button
+              ><button class="button primary" id="new-staff">
+                ＋ Add staff
+              </button>
+            </div>
+          </div>
+          <p id="salon-zone" class="muted ops-zone"></p>
+          <div
+            id="attendance-error"
+            class="banner warning"
+            role="status"
+            hidden
+          ></div>
+          <div class="stats operations-stats" id="attendance-stats"></div>
+          <div class="panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Staff member</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Hours</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-body"></tbody>
+              </table>
+            </div>
+            <div id="attendance-empty" class="empty">
+              Add your first staff member to start monitoring attendance.
+            </div>
+            <div class="panel-footer">
+              Hours show time between check-in and check-out, without break
+              deductions. Shifts must end on the same day.
+            </div>
+          </div>
+        </section>
+        <section id="sales-view" hidden aria-label="Daily sales register">
+          <div class="panel">
+            <div class="panel-heading table-toolbar">
+              <div>
+                <h2>Daily client register</h2>
+                <p class="muted">
+                  Record every attended visit and the amount collected in INR.
+                </p>
+              </div>
+              <label class="date-filter" for="sales-date"
+                >Business date<input
+                  id="sales-date"
+                  type="date"
+                  required /></label
+              ><button class="button secondary" id="refresh-sales">
+                Refresh</button
+              ><button class="button primary" id="new-sale">
+                ＋ Add client entry
+              </button>
+            </div>
+          </div>
+          <p class="muted ops-zone">
+            Totals include all entries for the selected date, across every page.
+          </p>
+          <div
+            id="sales-error"
+            class="banner warning"
+            role="status"
+            hidden
+          ></div>
+          <div class="stats operations-stats" id="sales-stats"></div>
+          <div class="panel">
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Client / contact</th>
+                    <th>Service</th>
+                    <th>Staff</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-body"></tbody>
+              </table>
+            </div>
+            <div id="sales-empty" class="empty">
+              No client entries for this date.
+            </div>
+            <div class="pagination">
+              <span id="sales-page-info" class="muted"></span>
+              <div>
+                <button class="button secondary" id="sales-previous">
+                  ← Previous</button
+                ><button class="button secondary" id="sales-next">
+                  Next →
+                </button>
+              </div>
+            </div>
+            <div class="panel-footer">
+              This register records payments received; it does not charge cards
+              or collect UPI payments. Each entry represents one attended client
+              visit.
             </div>
           </div>
         </section>
@@ -265,13 +398,15 @@
               placeholder="e.g. Alex Morgan"
           /></label>
           <label
-            >Email address<input
-              name="customerEmail"
-              type="email"
-              autocomplete="email"
-              maxlength="254"
+            >Contact number<input
+              name="contactNumber"
+              type="tel"
+              autocomplete="tel"
+              maxlength="16"
+              pattern="[+]?[0-9]{7,15}"
+              title="Enter 7 to 15 digits, optionally starting with +"
               required
-              placeholder="alex@example.com"
+              placeholder="+919876543210"
           /></label>
           <div class="select-field">
             <label for="treatment">Treatment</label
@@ -309,6 +444,184 @@
             Cancel</button
           ><button class="button primary" type="submit" id="submit-booking">
             Create appointment
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="staff-dialog" aria-labelledby="staff-title">
+      <form id="staff-form">
+        <div class="dialog-heading">
+          <h2 id="staff-title">Add staff member</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="staff-dialog"
+            aria-label="Close staff form"
+          >
+            ✕
+          </button>
+        </div>
+        <div
+          id="staff-form-error"
+          class="banner warning"
+          role="alert"
+          hidden
+        ></div>
+        <div class="form-grid">
+          <label
+            >Staff name<input
+              name="name"
+              maxlength="100"
+              required
+              autofocus
+              placeholder="Full name" /></label
+          ><label
+            >Staff role<input
+              name="role"
+              maxlength="100"
+              required
+              placeholder="e.g. Stylist or therapist"
+          /></label>
+        </div>
+        <div class="dialog-footer">
+          <button
+            class="button secondary"
+            type="button"
+            data-close="staff-dialog"
+          >
+            Cancel</button
+          ><button class="button primary" type="submit">
+            Add staff member
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="attendance-dialog" aria-labelledby="attendance-title">
+      <form id="attendance-form">
+        <div class="dialog-heading">
+          <h2 id="attendance-title">Mark attendance</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="attendance-dialog"
+            aria-label="Close attendance form"
+          >
+            ✕
+          </button>
+        </div>
+        <p id="attendance-person" class="muted"></p>
+        <div
+          id="attendance-form-error"
+          class="banner warning"
+          role="alert"
+          hidden
+        ></div>
+        <input type="hidden" name="staffId" /><input type="hidden" name="day" />
+        <div class="form-grid">
+          <div class="select-field full-width">
+            <label for="attendance-status">Attendance status</label
+            ><select name="status" id="attendance-status" autofocus required>
+              <option value="PRESENT">Present</option>
+              <option value="ABSENT">Absent</option>
+              <option value="LEAVE">Leave</option>
+            </select>
+          </div>
+          <label>Check-in<input name="checkIn" type="time" /></label
+          ><label>Check-out<input name="checkOut" type="time" /></label>
+        </div>
+        <p class="muted">
+          Check-out can be left blank until the shift ends. Times use the
+          salon’s configured time zone.
+        </p>
+        <div class="dialog-footer">
+          <button
+            class="button secondary"
+            type="button"
+            data-close="attendance-dialog"
+          >
+            Cancel</button
+          ><button class="button primary" type="submit">Save attendance</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="sale-dialog" aria-labelledby="sale-title">
+      <form id="sale-form">
+        <div class="dialog-heading">
+          <h2 id="sale-title">Add attended client</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="sale-dialog"
+            aria-label="Close sales form"
+          >
+            ✕
+          </button>
+        </div>
+        <div
+          id="sale-form-error"
+          class="banner warning"
+          role="alert"
+          hidden
+        ></div>
+        <p id="sale-staff-help" class="muted"></p>
+        <div class="form-grid">
+          <label
+            >Client name<input
+              name="customerName"
+              maxlength="100"
+              required
+              autofocus /></label
+          ><label
+            >Client contact number<input
+              name="contactNumber"
+              type="tel"
+              autocomplete="tel"
+              pattern="[+]?[0-9]{7,15}"
+              maxlength="16"
+              title="Enter 7 to 15 digits, optionally starting with +"
+              required
+              placeholder="+919876543210" /></label
+          ><label>Visit date<input name="day" type="date" required /></label
+          ><label
+            >Service attended<input
+              name="treatment"
+              maxlength="100"
+              required
+              placeholder="e.g. Haircut &amp; facial"
+          /></label>
+          <div class="select-field">
+            <label for="sale-staff">Staff member</label
+            ><select name="staffId" id="sale-staff" required></select>
+          </div>
+          <label
+            >Amount collected (₹)<input
+              name="amount"
+              type="number"
+              min="0.01"
+              max="99999999.99"
+              step="0.01"
+              inputmode="decimal"
+              required
+          /></label>
+          <div class="select-field full-width">
+            <label for="payment-method">Payment method</label
+            ><select name="paymentMethod" id="payment-method" required>
+              <option value="UPI">UPI</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+            </select>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button
+            class="button secondary"
+            type="button"
+            data-close="sale-dialog"
+          >
+            Cancel</button
+          ><button class="button primary" type="submit" id="save-sale">
+            Save client entry
           </button>
         </div>
       </form>

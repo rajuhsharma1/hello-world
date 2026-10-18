@@ -9,7 +9,7 @@ def request(url, data=None):
     body=None if data is None else json.dumps(data).encode()
     with urllib.request.urlopen(urllib.request.Request(url,data=body,headers={"Content-Type":"application/json", **({"traceparent":f"00-{TRACE_ID}-0123456789abcdef-01"} if data is not None else {})}),timeout=10) as response:
         return json.load(response)
-for service in ("booking", "notification"):
+for service in ("booking", "notification", "operations"):
     for attempt in range(90):
         try:
             assert request(f"{BASE_URL}/ops/{service}/health")["status"]=="UP"
@@ -18,10 +18,11 @@ for service in ("booking", "notification"):
             if attempt==89: raise
             time.sleep(2)
 with urllib.request.urlopen(BASE_URL, timeout=10) as response:
-    assert b"Stillwater" in response.read(), "UI not served by gateway"
-print("PASS: UI and both health endpoints served through one gateway")
-payload={"customerName":"Smoke Test","customerEmail":"smoke@example.com","treatment":"Massage","therapist":str(uuid.uuid4()),"startsAt":(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()}
+    assert b"The Ark" in response.read(), "UI not served by gateway"
+print("PASS: UI and all service health endpoints served through one gateway")
+payload={"customerName":"Smoke Test","contactNumber":"+919876543213","treatment":"Massage","therapist":str(uuid.uuid4()),"startsAt":(datetime.now(timezone.utc)+timedelta(days=1)).isoformat()}
 a=request(BASE_URL+"/api/appointments",payload)
+assert a["contactNumber"]==payload["contactNumber"] and "customerEmail" not in a
 assert request(BASE_URL+"/api/appointments/"+a["id"])["id"]==a["id"]
 try:
     request(BASE_URL+"/api/appointments",payload)

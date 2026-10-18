@@ -13,7 +13,7 @@ class BookingTests {
   try(var factory=Validation.buildDefaultValidatorFactory()) {
    var validator=factory.getValidator();
    assertEquals(5,validator.validate(new BookingRequest("","bad","","",Instant.EPOCH)).size());
-   assertTrue(validator.validate(new BookingRequest("Alice","alice@example.com","Massage","Sam",Instant.now().plusSeconds(3600))).isEmpty());
+   assertTrue(validator.validate(new BookingRequest("Alice","+919876543210","Massage","Sam",Instant.now().plusSeconds(3600))).isEmpty());
   }
  }
  @Test void failedKafkaSendLeavesOutboxPending() {
