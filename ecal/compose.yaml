@@ -1,0 +1,45 @@
+# Separate Compose project/volumes: ECAL cannot accidentally replace the existing Ark stack.
+name: ecal
+services:
+  db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: ecal
+      POSTGRES_USER: ecal
+      POSTGRES_PASSWORD: ${ECAL_DB_PASSWORD:-ecal_dev_only}
+    volumes: [ecal-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ecal -d ecal"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  api:
+    build:
+      context: backend/modular-monolith
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://db:5432/ecal
+      ECAL_DB_PASSWORD: ${ECAL_DB_PASSWORD:-ecal_dev_only}
+      ECAL_BIND_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/local/web.Dockerfile
+    ports: ["127.0.0.1:8090:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  ecal-data:

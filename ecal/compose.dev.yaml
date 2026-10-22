@@ -1,0 +1,4 @@
+# Apply only for host Java/Vite development: make dev-db starts the database alone.
+services:
+  db:
+    ports: ["127.0.0.1:5544:5432"]

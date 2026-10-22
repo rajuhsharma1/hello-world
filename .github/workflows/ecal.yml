@@ -1,0 +1,25 @@
+name: ECAL Phase 0 and 1
+on:
+  push:
+    paths: ['ecal/**', '.github/workflows/ecal.yml']
+  pull_request:
+    paths: ['ecal/**', '.github/workflows/ecal.yml']
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21', cache: maven, cache-dependency-path: ecal/backend/modular-monolith/pom.xml}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.19.0', cache: npm, cache-dependency-path: ecal/frontend/package-lock.json}
+      - run: npm ci --prefix ecal/frontend
+      - run: make -C ecal verify
+      - run: npx --prefix ecal/frontend playwright install --with-deps chromium
+      - run: make -C ecal up
+      - run: make -C ecal smoke
+      - run: make -C ecal e2e
+      - if: failure()
+        run: docker compose -f ecal/compose.yaml logs --no-color --tail=120
+      - if: always()
+        run: docker compose -f ecal/compose.yaml down

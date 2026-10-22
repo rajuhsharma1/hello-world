@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: ecal-monolith
+  datasource:
+    url: ${ECAL_DB_URL:jdbc:postgresql://localhost:5544/ecal}
+    username: ${ECAL_DB_USER:ecal}
+    password: ${ECAL_DB_PASSWORD:ecal_dev_only}
+    hikari:
+      maximum-pool-size: 12
+      connection-timeout: 5000
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  address: ${ECAL_BIND_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8090}
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+logging:
+  structured:
+    format:
+      console: logstash

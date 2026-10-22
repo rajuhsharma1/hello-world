@@ -1,0 +1,114 @@
+import { expect, test } from "../../frontend/node_modules/@playwright/test";
+
+test("a buyer confirms an order, reloads persisted history, and sees a declined payment outcome", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "A considered collection." }),
+  ).toBeVisible();
+  const choose = page.getByRole("button", { name: /^Choose / }).first();
+  await choose.click();
+  await page.getByRole("button", { name: /Place simulated order/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your order is confirmed." }),
+  ).toBeVisible();
+  const result = page.getByRole("status").filter({
+    has: page.getByRole("heading", { name: "Your order is confirmed." }),
+  });
+  const orderId = await result.locator("dd").first().innerText();
+  await page.reload();
+  await expect(
+    page.getByRole("table").getByText(orderId, { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /^Choose / })
+    .first()
+    .click();
+  await page.getByLabel("Simulated payment outcome").selectOption("DECLINE");
+  await page.getByRole("button", { name: /Place simulated order/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Payment declined. Stock released." }),
+  ).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
+test("mobile catalog has no horizontal overflow and the checkout is keyboard accessible", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: /^Choose / }).first(),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBeTruthy();
+  await page
+    .getByRole("button", { name: /^Choose / })
+    .first()
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Quantity")).toBeEnabled();
+});
+
+test("a committed checkout with a lost response survives reload and replays one business effect", async ({
+  page,
+}) => {
+  const before = await (await page.request.get("/api/catalog/products")).json();
+  const chosen = before.find(
+    (p: { availableStock: number }) => p.availableStock > 0,
+  );
+  expect(chosen).toBeTruthy();
+  let committedId = "";
+  let dropped = false;
+  const commands: { key: string | undefined; body: string | null }[] = [];
+  await page.route("**/api/orders", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    commands.push({
+      key: route.request().headers()["idempotency-key"],
+      body: route.request().postData(),
+    });
+    if (!dropped) {
+      // Let the real backend commit, then drop only its response to reproduce the dangerous gap.
+      const response = await route.fetch();
+      expect(response.status()).toBe(201);
+      committedId = (await response.json()).id;
+      dropped = true;
+      return route.abort("failed");
+    }
+    return route.continue();
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: `Choose ${chosen.name}`, exact: true })
+    .click();
+  await page.getByRole("button", { name: /Place simulated order/ }).click();
+  await expect(page.getByRole("alert")).toContainText("could not verify");
+  await page.reload();
+  await expect(page.getByLabel("Quantity")).toBeDisabled();
+  await page.getByRole("button", { name: /Retry same checkout/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your order is confirmed." }),
+  ).toBeVisible();
+  const result = page
+    .getByRole("status")
+    .filter({
+      has: page.getByRole("heading", { name: "Your order is confirmed." }),
+    });
+  await expect(result.locator("dd").first()).toHaveText(committedId);
+  expect(commands).toHaveLength(2);
+  expect(commands[0]).toEqual(commands[1]);
+  const after = await (await page.request.get("/api/catalog/products")).json();
+  expect(
+    after.find((p: { id: string }) => p.id === chosen.id).availableStock,
+  ).toBe(chosen.availableStock - 1);
+  const history = await (await page.request.get("/api/orders")).json();
+  expect(
+    history.filter((o: { id: string }) => o.id === committedId),
+  ).toHaveLength(1);
+});

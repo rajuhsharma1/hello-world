@@ -1,0 +1,398 @@
+import { useEffect, useState } from "react";
+import { api, ApiError, restorePending, savePending } from "./api";
+import type { Order, PendingCheckout, Product } from "./api";
+import { money } from "./format";
+import { ProductCard } from "./components/ProductCard";
+import { OrderResult } from "./components/OrderResult";
+import { OrderHistory } from "./components/OrderHistory";
+
+/** Owns one buyer journey; server data and transient form state do not yet warrant a global store. */
+export default function App() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selected, setSelected] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [outcome, setOutcome] = useState<"APPROVE" | "DECLINE">("APPROVE");
+  const [pending, setPending] = useState<PendingCheckout | null>(
+    restorePending,
+  );
+  const [result, setResult] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
+  const [historyError, setHistoryError] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [recovered, setRecovered] = useState(false);
+
+  async function loadCatalog() {
+    try {
+      setProducts(await api.products());
+      setCatalogError("");
+    } catch {
+      setCatalogError(
+        "Catalog unavailable. Check that the backend is running, then refresh.",
+      );
+    }
+  }
+  async function loadOrders() {
+    try {
+      setOrders(await api.orders());
+      setHistoryError("");
+    } catch {
+      setHistoryError(
+        "Order history is temporarily unavailable. Your saved orders remain in the database.",
+      );
+    }
+  }
+  useEffect(() => {
+    // Reads may run twice under development StrictMode. Commands are only sent by an explicit user action.
+    let active = true;
+    Promise.all([loadCatalog(), loadOrders()]).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const product = products.find(
+    (p) => p.id === (pending?.command.productId ?? selected),
+  );
+  const effectiveQuantity = pending?.command.quantity ?? quantity;
+  const effectiveOutcome = pending?.command.paymentOutcome ?? outcome;
+
+  async function checkout(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || (!product && !pending)) return;
+    const operation = pending ?? {
+      key: crypto.randomUUID(),
+      command: { productId: selected, quantity, paymentOutcome: outcome },
+    };
+    setBusy(true);
+    setCheckoutError("");
+    setResult(null);
+    let requestStarted = false;
+    try {
+      // Both payload and key are frozen after an uncertain outcome; editing either would break safe replay.
+      setPending(operation);
+      savePending(operation);
+      requestStarted = true;
+      const order = await api.checkout(operation);
+      setResult(order);
+      setRecovered(Boolean(pending));
+      savePending(null);
+      setPending(null);
+      await Promise.all([loadCatalog(), loadOrders()]);
+    } catch (error) {
+      if (error instanceof ApiError && error.isTerminal) {
+        savePending(null);
+        setPending(null);
+        setCheckoutError(error.message);
+        await loadCatalog();
+      } else if (!requestStarted) {
+        setCheckoutError(
+          "No checkout was sent: this browser could not save its retry identity. Allow session storage and retry.",
+        );
+      } else {
+        setCheckoutError(
+          "We could not verify the checkout outcome. Retry the same checkout safely; it may already have committed.",
+        );
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function viewOrder(id: string) {
+    try {
+      setResult(await api.order(id));
+      setRecovered(false);
+    } catch {
+      setHistoryError(
+        "Unable to load that order. Refresh history and try again.",
+      );
+    }
+  }
+
+  return (
+    <>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <header className="masthead">
+        <a className="brand" href="#main" aria-label="ECAL home">
+          <span className="brand-mark">E</span>
+          <span>
+            ECAL<small>COMMERCE ARCHITECTURE LAB</small>
+          </span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="#catalog">Catalog</a>
+          <a href="#checkout">Checkout</a>
+          <a href="#orders">Order history</a>
+        </nav>
+        <span className="phase-label">
+          <span /> PHASE 01 · LOCAL LAB
+        </span>
+      </header>
+      <main id="main">
+        <section className="hero">
+          <div>
+            <p className="eyebrow">A SMALL APPLICATION. REAL ARCHITECTURE.</p>
+            <h1>
+              Every order has
+              <br />a story behind it.
+            </h1>
+            <p className="hero-description">
+              Explore a commerce flow where inventory, payment simulation and
+              order state agree—in one local transaction.
+            </p>
+            <a className="primary-link" href="#catalog">
+              Explore the catalog <span aria-hidden="true">→</span>
+            </a>
+          </div>
+          <aside
+            className="architecture-card"
+            aria-label="Checkout transaction overview"
+          >
+            <div className="architecture-heading">
+              <span className="status-dot" /> MODULAR MONOLITH
+            </div>
+            <ol>
+              <li>
+                <span>01</span>
+                <div>
+                  <strong>Choose a product</strong>
+                  <small>Read a server-owned price</small>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <strong>Reserve inventory</strong>
+                  <small>Atomic stock checks prevent overselling</small>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <strong>Simulate a payment</strong>
+                  <small>Approve or decline—no real money</small>
+                </div>
+              </li>
+              <li>
+                <span>04</span>
+                <div>
+                  <strong>Persist the outcome</strong>
+                  <small>One transaction, a durable order</small>
+                </div>
+              </li>
+            </ol>
+            <div className="transaction-caption">
+              ONE PROCESS <span>·</span> ONE POSTGRESQL DATABASE
+            </div>
+          </aside>
+        </section>
+        <div className="lab-notice">
+          <span aria-hidden="true">ⓘ</span>
+          <p>
+            <strong>A learning environment, deliberately.</strong> One shared
+            demo buyer, no sign-in and simulated payments only. Run on loopback;
+            do not expose this phase publicly.
+          </p>
+        </div>
+        <section
+          id="catalog"
+          className="section-block"
+          aria-labelledby="catalog-title"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">01 / DISCOVER</p>
+              <h2 id="catalog-title">A considered collection.</h2>
+            </div>
+            <button
+              className="text-button"
+              onClick={() => void loadCatalog()}
+              disabled={loading}
+            >
+              Refresh catalog <span aria-hidden="true">↻</span>
+            </button>
+          </div>
+          {catalogError && (
+            <p className="notice error" role="alert">
+              {catalogError}
+            </p>
+          )}
+          {loading ? (
+            <p role="status" className="empty-state">
+              Loading products…
+            </p>
+          ) : !products.length && !catalogError ? (
+            <p className="empty-state">
+              No products available. Seed the local database to begin.
+            </p>
+          ) : null}
+          <div className="product-grid">
+            {products.map((p, i) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                index={i}
+                selected={product?.id === p.id}
+                locked={Boolean(pending)}
+                onChoose={(id) => {
+                  setSelected(id);
+                  setQuantity(1);
+                  setResult(null);
+                  setCheckoutError("");
+                  document
+                    .getElementById("checkout")
+                    ?.scrollIntoView({
+                      behavior: matchMedia("(prefers-reduced-motion: reduce)")
+                        .matches
+                        ? "instant"
+                        : "smooth",
+                      block: "start",
+                    });
+                }}
+              />
+            ))}
+          </div>
+        </section>
+        <section
+          id="checkout"
+          className="section-block checkout-layout"
+          aria-labelledby="checkout-title"
+        >
+          <div className="checkout-intro">
+            <p className="eyebrow">02 / CHECKOUT</p>
+            <h2 id="checkout-title">
+              Make the invariants
+              <br />
+              do the work.
+            </h2>
+            <p>
+              Try an approved payment, then a declined one. A decline cancels
+              the order and returns its stock. Replay an uncertain request with
+              the same key to avoid a duplicate effect.
+            </p>
+            <div className="boundary-note">
+              <strong>The transaction boundary</strong>
+              <p>
+                Order + inventory + simulated payment + notification record. No
+                network payment call or Kafka publish is hidden inside this
+                transaction.
+              </p>
+            </div>
+          </div>
+          <div className="checkout-panel">
+            <form onSubmit={checkout} aria-label="Checkout">
+              <div className="checkout-product">
+                <span className="eyebrow">YOUR SELECTION</span>
+                <h3>
+                  {product?.name ??
+                    (pending
+                      ? "Recovering checkout"
+                      : "Choose a product above")}
+                </h3>
+                <p>
+                  {product
+                    ? `${money(product.price, product.currency)} per item`
+                    : pending
+                      ? "The original product and request are preserved for safe retry."
+                      : "A single-product order keeps this first slice focused."}
+                </p>
+              </div>
+              <label htmlFor="quantity">Quantity</label>
+              <input
+                id="quantity"
+                type="number"
+                min="1"
+                max="10"
+                required
+                value={effectiveQuantity}
+                disabled={Boolean(pending) || busy || !product}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+              />
+              <label htmlFor="payment">Simulated payment outcome</label>
+              <select
+                id="payment"
+                value={effectiveOutcome}
+                disabled={Boolean(pending) || busy}
+                onChange={(e) =>
+                  setOutcome(e.target.value as "APPROVE" | "DECLINE")
+                }
+              >
+                <option value="APPROVE">Approve · confirm the order</option>
+                <option value="DECLINE">
+                  Decline · cancel and release stock
+                </option>
+              </select>
+              <p className="field-hint">
+                No card, bank account or payment credentials are used.
+              </p>
+              {product && (
+                <div className="order-summary">
+                  <span>Estimated total</span>
+                  <strong>
+                    {money(
+                      (Number(product.price) * effectiveQuantity).toFixed(2),
+                      product.currency,
+                    )}
+                  </strong>
+                  <small>The backend calculates the authoritative total.</small>
+                </div>
+              )}
+              {pending && (
+                <p className="notice pending" role="status">
+                  Unresolved checkout retained. Its product, quantity and
+                  simulation are locked until the same request is acknowledged.
+                </p>
+              )}
+              {checkoutError && (
+                <p className="notice error" role="alert">
+                  {checkoutError}
+                </p>
+              )}
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={busy || (!product && !pending)}
+              >
+                {busy
+                  ? "Processing checkout…"
+                  : pending
+                    ? "Retry same checkout"
+                    : "Place simulated order"}
+                <span aria-hidden="true">→</span>
+              </button>
+            </form>
+          </div>
+        </section>
+        {result && <OrderResult result={result} recovered={recovered} />}
+        <OrderHistory
+          orders={orders}
+          loading={loading}
+          historyError={historyError}
+          onRefresh={() => void loadOrders()}
+          onView={(id) => void viewOrder(id)}
+        />
+      </main>
+      <footer>
+        <a className="brand footer-brand" href="#main">
+          <span className="brand-mark">E</span>
+          <span>
+            ECAL<small>BUILD SMALL. UNDERSTAND DEEPLY.</small>
+          </span>
+        </a>
+        <p>
+          Phase 0 foundations + the first Phase 1 vertical slice.
+          <br />
+          Architecture is a set of decisions you can explain and prove.
+        </p>
+        <span>SIMULATED COMMERCE · LOCAL FIRST</span>
+      </footer>
+    </>
+  );
+}
