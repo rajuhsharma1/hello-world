@@ -1,9 +1,11 @@
 # Local development and recovery
 
-Run from `ecal/`. Full Docker mode: `make up`, `make smoke`, `make down`. Host mode: `make down`, `make dev-db`, then `make dev-backend` and `make dev-frontend` in separate terminals. See the README for requirements and tests. These are mutually exclusive modes because both use backend/gateway port 8090.
+Run from `ecal/`, the folder containing `compose.yaml`. Full Docker mode: `docker compose -f compose.yaml up --build --wait --wait-timeout 180`; stop with `docker compose -f compose.yaml down`. GNU Make/Bash users can use `make up`, `make smoke`, `make down`. On Windows PowerShell, Make is optional: use Docker Compose directly. Host mode: `make down`, `make dev-db`, then `make dev-backend` and `make dev-frontend` in separate terminals. See the README for requirements and tests. These are mutually exclusive modes because both use backend/gateway port 8090.
 
 | Symptom | Evidence | Recovery |
 |---|---|---|
+| PowerShell says Make is not recognised | `make` is not installed; the Makefile also assumes Bash | Use the direct Docker Compose command above; no Make installation is required |
+| Docker command or engine is unavailable | `docker compose version`, Docker Desktop status | Install/start Docker Desktop with Linux containers; reopen PowerShell after installation |
 | Startup takes time | `docker compose logs --tail=80 api db` | Wait for DB health, migrations, then API health; `make up` waits for readiness. |
 | Port already used | `docker compose ps`; check local services on 8090/5173/5544 | Stop the previous ECAL mode; do not stop the separate Ark stack. |
 | Database password changed in `.env` but login fails | API logs show connection authentication failure | Restore the existing password or deliberately rotate the DB user; an environment edit does not rotate persisted credentials. |

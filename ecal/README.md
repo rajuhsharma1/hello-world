@@ -6,20 +6,47 @@ The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint
 
 ## Start here
 
-**Docker-only route:** install Docker Engine/Desktop with Compose v2 and keep it running. From this directory:
+**Docker-only route — Windows, macOS and Linux:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with Compose v2 on Linux) and keep it running. Java, Maven, Node and Make are not required on your computer for this route.
+
+In a terminal opened in your cloned `hello-world` repository, select the lab branch and enter its directory:
 
 ```sh
-make up
-# Without Make: docker compose up --build --wait --wait-timeout 180
+git fetch origin
+git switch feature/ecal-phase-1
+cd ecal
+```
+
+If you are already inside `ecal`, do not run `cd ecal` again. This folder contains **`compose.yaml`**; the repository root contains the separate Ark application's `compose.yml`.
+
+Check Docker and start the application:
+
+```sh
+docker compose version
+docker compose -f compose.yaml up --build --wait --wait-timeout 180
 ```
 
 Open `http://localhost:8090`. First startup downloads images/dependencies, compiles Java/TypeScript and runs migrations. Only this loopback port is published. PostgreSQL is private and orders survive normal restarts.
 
+### Windows PowerShell
+
+The error **“The term 'make' is not recognized”** means Make is not installed. Use the Docker commands above directly; Make is an optional shortcut. The supplied Makefile also expects Bash, so installing only a Windows Make executable is unnecessary for Docker startup.
+
+1. Open Docker Desktop and wait until its engine is running. Use Linux containers.
+2. Open PowerShell in the `ecal` folder. `Get-ChildItem compose.yaml` should show the lab's Compose file.
+3. Run `docker compose -f compose.yaml up --build --wait --wait-timeout 180`.
+4. Open `http://localhost:8090` in your browser.
+
+If PowerShell also cannot find `docker`, install Docker Desktop and reopen PowerShell. If Docker cannot connect to its engine, start Docker Desktop and complete any WSL2 setup it requests. An “unknown flag” for `--wait` or `--wait-timeout` means Docker Compose needs updating.
+
+Useful commands from `ecal/`:
+
 ```sh
-make logs     # inspect startup; Ctrl+C exits logs, not the app
-make down     # stop containers while preserving the database volume
-make up       # start again; saved order history remains
+docker compose -f compose.yaml ps
+docker compose -f compose.yaml logs --tail=80 api db web
+docker compose -f compose.yaml down
 ```
+
+Normal `down` preserves the database. Do not add `-v` unless deliberately discarding the lab data. On systems with GNU Make and Bash, `make up`, `make logs` and `make down` remain equivalent shortcuts.
 
 All payments and notification records are **simulated**. Every browser shares one server-assigned demo buyer; there is no authentication or owner isolation yet. Keep this lab on loopback and use synthetic data only. This is not a production deployment or a real store.
 
