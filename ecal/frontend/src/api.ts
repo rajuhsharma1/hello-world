@@ -56,7 +56,7 @@ export class ApiError extends Error {
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(url, {
     ...options,
-    signal: AbortSignal.timeout(15000),
+    signal: options.signal ?? AbortSignal.timeout(15000),
   });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
@@ -74,7 +74,46 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export interface Page<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+export interface ImportResult {
+  totalRows: number;
+  created: number;
+  skipped: number;
+  committedBatches: number;
+  failedBatches: number;
+  batches: {
+    index: number;
+    status: string;
+    rows: number;
+    created: number;
+    skipped: number;
+    error: string | null;
+  }[];
+}
 export const api = {
+  productsPage: (cursor: string | null) =>
+    request<Page<Product>>(
+      "/api/catalog/products/page?limit=20" +
+        (cursor ? "&cursor=" + encodeURIComponent(cursor) : ""),
+    ),
+  ordersPage: (status: string, cursor: string | null) =>
+    request<Page<Order>>(
+      "/api/orders/page?limit=20&status=" +
+        status +
+        (cursor ? "&cursor=" + encodeURIComponent(cursor) : ""),
+    ),
+  importCatalog: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<ImportResult>("/api/catalog/import", {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(120000),
+    });
+  },
   products: () => request<Product[]>("/api/catalog/products"),
   orders: () => request<Order[]>("/api/orders"),
   order: (id: string) =>

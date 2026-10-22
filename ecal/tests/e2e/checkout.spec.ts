@@ -95,11 +95,9 @@ test("a committed checkout with a lost response survives reload and replays one 
   await expect(
     page.getByRole("heading", { name: "Your order is confirmed." }),
   ).toBeVisible();
-  const result = page
-    .getByRole("status")
-    .filter({
-      has: page.getByRole("heading", { name: "Your order is confirmed." }),
-    });
+  const result = page.getByRole("status").filter({
+    has: page.getByRole("heading", { name: "Your order is confirmed." }),
+  });
   await expect(result.locator("dd").first()).toHaveText(committedId);
   expect(commands).toHaveLength(2);
   expect(commands[0]).toEqual(commands[1]);
@@ -111,4 +109,63 @@ test("a committed checkout with a lost response survives reload and replays one 
   expect(
     history.filter((o: { id: string }) => o.id === committedId),
   ).toHaveLength(1);
+});
+
+test("operator uploads real CSV, pages products, replays safely and filters history", async ({
+  page,
+}) => {
+  const { randomUUID } = await import("node:crypto");
+  const rows = Array.from(
+    { length: 25 },
+    (_, index) =>
+      `${randomUUID()},ZZ browser import ${String(index).padStart(2, "0")},Browser fixture,1.25,INR,3`,
+  );
+  const file = {
+    name: "browser-import.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(
+      "productId,name,description,price,currency,stock\r\n" +
+        rows.join("\r\n") +
+        "\r\n",
+    ),
+  };
+  await page.goto("/");
+  await page.getByLabel("Catalog CSV").setInputFiles(file);
+  await page
+    .getByRole("button", { name: "Import catalog", exact: true })
+    .click();
+  await expect(
+    page.getByText("25 created · 0 skipped · 0 failed batches."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Next products", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Next products", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Previous products", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: /Choose ZZ browser import/ }).first(),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Import catalog", exact: true })
+    .click();
+  await expect(
+    page.getByText("0 created · 25 skipped · 0 failed batches."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Previous products", exact: true }),
+  ).toBeDisabled();
+  await page.getByLabel("Order status").selectOption("CANCELLED");
+  await expect(
+    page.getByRole("table").getByText("CANCELLED", { exact: true }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("table").getByText("CONFIRMED", { exact: true }),
+  ).toHaveCount(0);
+  expect(
+    (await page.request.get("/examples/catalog-import.csv")).status(),
+  ).toBe(200);
 });

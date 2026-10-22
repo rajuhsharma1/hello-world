@@ -49,4 +49,20 @@ class JdbcCatalog implements Catalog {
       ROW
     );
   }
+
+  @Override
+  public List<Product> page(int fetchSize, String afterName, UUID afterId) {
+    if (afterName == null) return db.query(
+      "select * from catalog_product order by name,id limit ?",
+      ROW,
+      fetchSize
+    );
+    return db.query(
+      "select * from catalog_product where (name,id)>(?,?) order by name,id limit ?",
+      ROW,
+      afterName,
+      afterId,
+      fetchSize
+    );
+  }
 }

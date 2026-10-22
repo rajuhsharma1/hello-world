@@ -34,13 +34,29 @@ public class ApiErrors {
       MethodArgumentTypeMismatchException.class,
       HttpMessageNotReadableException.class,
       IllegalArgumentException.class,
+      java.time.DateTimeException.class,
     }
   )
   ResponseEntity<ProblemDetail> invalid(Exception e, HttpServletRequest r) {
     return problem(
       400,
-      "Use a UUID idempotency key, a product ID, quantity 1–10 and APPROVE or DECLINE. No client price is accepted.",
+      "Invalid request. Check cursor, limit (1–50), status, CSV sample headers, or checkout fields. Checkout accepts product, quantity and simulated outcome only.",
       "INVALID_REQUEST",
+      r
+    );
+  }
+
+  @ExceptionHandler(
+    org.springframework.web.multipart.MaxUploadSizeExceededException.class
+  )
+  ResponseEntity<ProblemDetail> uploadTooLarge(
+    Exception e,
+    HttpServletRequest r
+  ) {
+    return problem(
+      413,
+      "Choose a CSV up to 256 KiB (1000 rows).",
+      "UPLOAD_TOO_LARGE",
       r
     );
   }
@@ -64,6 +80,16 @@ public class ApiErrors {
 
   @ExceptionHandler(Exception.class)
   ResponseEntity<ProblemDetail> unexpected(Exception e, HttpServletRequest r) {
+    if (
+      e instanceof
+        org.springframework.web.server.ResponseStatusException status &&
+      status.getStatusCode().value() == 429
+    ) return problem(
+      429,
+      "Another catalog import is running. Retry after the current upload completes.",
+      "IMPORT_BUSY",
+      r
+    );
     // Framework 404/405/415 errors are client failures, not an internal checkout outage.
     if (
       e instanceof org.springframework.web.ErrorResponse error

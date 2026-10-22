@@ -16,4 +16,5 @@ public interface Catalog {
 
   Product find(UUID productId);
   List<Product> list();
+  List<Product> page(int fetchSize, String afterName, UUID afterId);
 }

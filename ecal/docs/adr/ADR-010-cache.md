@@ -1,14 +1,14 @@
 # ADR-010: Measure before adding Redis or Spring Cache
 
-**Status:** Deferred — Phase 2 experiment
+**Status:** Accepted — run without application caching after Phase 2 measurement; Redis remains deferred
 
 ## Context
 
-No performance baseline demonstrates that catalog reads are a bottleneck. Inventory is authoritative database state.
+Phase 2 measured a selective order-history workload before introducing a cache. Inventory remains authoritative database state.
 
 ## Decision — what and why
 
-Ship without an application cache. In Phase 2, collect a controlled baseline before choosing a key, TTL, invalidation owner and consistency contract. Never make a cached stock count the reservation authority.
+Continue without an application cache after the controlled Phase 2 index experiment. Any future cache proposal needs a key, TTL, invalidation owner and consistency contract. Never make a cached stock count the reservation authority.
 
 ## Alternatives — why not now
 
@@ -24,7 +24,7 @@ No cache means no stale-cache correctness bug. Future cache failure should have 
 
 ## Validation — how to prove it
 
-Phase 2 records workload, concurrency, warmup, machine/DB limits and identical before/after p50/p95/p99. Include stale/invalidation and failure tests. No performance result is claimed now.
+Phase 2 records workload, concurrency, warmup, machine/DB limits and identical before/after p50/p95/p99. A future cache implementation must add stale/invalidation and failure tests. [The Phase 2 report](../../tests/performance/REPORT.md) records actual selective-query measurements: p95 about 37 ms without the status index versus 11–12 ms with it. This supports the current SQL fix; it does not establish catalog cache value or production capacity. No stale/invalidation test is claimed because no cache was introduced.
 
 Actual execution evidence belongs in the project validation report; this ADR does not claim a test passed merely because it describes one.
 

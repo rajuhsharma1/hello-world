@@ -1,6 +1,35 @@
-# Observed validation — Phase 0 and first Phase 1 slice
+# Observed validation — Phase 2 (with retained Phase 1 baseline)
 
 Validated on 22 October 2026 in the provided Linux cloud workspace. This records observations, not production readiness or achieved NFR/SLA targets.
+
+## Phase 2 observations
+
+All observations below were collected on 22 October 2026 in this workspace; hosted CI and production capacity are not implied.
+
+| Check | Observed outcome | Practical limit |
+|---|---|---|
+| Backend `mvn verify` | **34 tests passed, none skipped**: 4 domain, 3 architecture, 2 OpenAPI, 2 import concurrency/uncertainty, 13 original checkout integration and 10 new PostgreSQL Phase 2 integration | Finite local interleavings; no external payment or distributed transaction |
+| Import transactions/recovery | Valid batch commits; a later failing batch rolls back its earlier insert; corrected replay skips committed products; consumed stock stays reduced; changed import identity fails | Successful batches are not compensated; crash/commit ambiguity requires replay |
+| CSV boundaries | Quoted commas/newlines, malformed UTF-8/unclosed quotes, duplicate IDs, 1000-row/256-KiB bounds, and actual multipart HTTP 413 handling passed | Loopback operator lab; no production upload/security certification |
+| Worker/admission bounds | Latches exercise twenty batches, peak four worker calls, second file rejected 429; injected infrastructure failure reports UNKNOWN | Process-local admission, not a cluster-wide job scheduler |
+| Read behavior | Keyset pagination visits all 54 fixture products once; equal-time UUID order, status cursor scope and server buyer filtering pass | Across-request pages are not a stable export snapshot |
+| N+1 regression proof | Physical JDBC prepare instrumentation: catalog page sizes 1/20 each use two SELECTs, history one | JDBC proof; no claim of testing Hibernate behavior |
+| Frontend | **11 component tests passed**; strict TypeScript and Vite build passed | HTTP mocked in component tier |
+| Packaged browser journey | **4 Playwright tests passed** through built Nginx/Java/PostgreSQL: original checkout/reload/decline, mobile/keyboard, lost-response replay, and native CSV upload/paging/replay/filter/sample download | Uses synthetic application data; not a full accessibility or capacity audit |
+| Images/runtime | Both multi-stage images built; ECAL db/api/web healthy; Nginx config test and functional gateway smoke passed; existing ECAL orders retained through additive V4/V5 migration | Trusted corporate CA/proxy override remained outside source; only loopback 8090 published |
+| Query experiment | Four completed runs, 200000 orders, 600 measured requests/run, eight clients; p95 baseline 37.01–37.51 ms versus indexed 11.49–12.32 ms; zero HTTP errors | Deliberately selective warm-cache read experiment; no checkout throughput/NFR qualification |
+| Plan/storage evidence | Baseline scans and filters 19980 rows, 701 buffer blocks; indexed plan touches four blocks with zero heap fetches; new covering index adds ~32.2 MiB on fixture | VACUUM visibility and real write mix affect plans/storage/cost |
+| Documentation/contracts | HLD/LLD, ADR-015/016, cache decision, traceability, OpenAPI, Windows guide and benchmark artifacts updated; local Markdown links and Compose config checked | Discovery assumptions remain reviewable hypotheses |
+
+[Performance report and raw artifacts](tests/performance/REPORT.md) record workload, percentiles, CPU/DB diagnostics and limitations. Import uses Apache Commons CSV 1.14.1. Cache remains deferred on the strength of the index experiment.
+
+Phase 2 incidents: the first combined image build exhausted disk; it was stopped and unused build artifacts cleared without deleting application volumes. Sequential builds completed. A browser check caught a sample CSV download returning 403 because public files inherited a restrictive workspace umask; the web image now grants read/traverse access to its public assets, and all four browser tests passed. A jsdom required-file validity limitation was isolated in the component test; native submit/upload was verified in Chromium.
+
+Current unimplemented work includes service extraction, Kafka/outbox/Saga, authentication, a separate asynchronous read store, application caching, distributed tracing, cloud deployment and backup/restore. This phase's synchronous SQL projection is not an event-driven CQRS implementation. Existing Ark services/data were preserved. No public deployment, paid resource or external message was sent.
+
+## Retained Phase 1 baseline
+
+The observations below describe the earlier Phase 1 delivery, before the Phase 2 additions above. In particular, its smaller test counts and lack of a benchmark are historical.
 
 ## Environment and verified versions
 

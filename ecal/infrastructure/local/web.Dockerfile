@@ -10,4 +10,6 @@ RUN npm run build
 FROM nginx:1.28-alpine
 COPY infrastructure/local/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /frontend/dist/ /usr/share/nginx/html/
+# Public files may inherit a restrictive host umask; Nginx workers must be able to read them.
+RUN chmod -R a+rX /usr/share/nginx/html
 EXPOSE 8080

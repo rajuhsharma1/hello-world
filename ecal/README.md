@@ -1,8 +1,12 @@
-# Enterprise Commerce Architecture Lab — Phase 0 + first Phase 1 slice
+# Enterprise Commerce Architecture Lab — Phase 2
 
 A runnable architecture learning project: browse three products, submit a single-product order, simulate payment approval or decline, and reload persisted order status/history. It lives beside the existing Ark application; it does not replace or reuse that application's services, accounts or database.
 
-The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery follows the user's request for **Phase 0 and the first small Phase 1 implementation**, not the later distributed/cloud milestones.
+The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery extends Phase 0/1 with **Phase 2 database performance and bounded CSV imports**; distributed/cloud milestones remain future work.
+
+## What changed in Phase 2
+
+Cursor-paged catalog and filtered order history, explicit SQL read projections and indexes, bounded create-only CSV imports with per-batch rollback and safe replay, and a reproducible measured query experiment. Read the [Phase 2 mentoring guide](docs/learning/PHASE-02.md), [performance results](tests/performance/REPORT.md), and [observed validation](VALIDATION.md). The previous `feature/ecal-phase-1` branch remains the transactional baseline.
 
 ## Start here
 
@@ -12,7 +16,7 @@ In a terminal opened in your cloned `hello-world` repository, select the lab bra
 
 ```sh
 git fetch origin
-git switch feature/ecal-phase-1
+git switch feature/ecal-phase-2
 cd ecal
 ```
 
@@ -171,7 +175,7 @@ Repeating that exact POST returns the original result with `200`; changing quant
 3. [Threat model and risk register](docs/requirements/THREATS_AND_RISKS.md)
 4. [HLD](docs/architecture/HLD.md) → [LLD](docs/architecture/LLD.md)
 5. [Architecture decisions](docs/DECISION_LOG.md) → [requirements-to-test traceability](docs/TRACEABILITY_MATRIX.md)
-6. [Phase 0 mentoring checkpoint](docs/learning/PHASE-00.md) → [Phase 1 walkthrough/exercises](docs/learning/PHASE-01.md)
+6. [Phase 0 mentoring checkpoint](docs/learning/PHASE-00.md) → [Phase 1 walkthrough/exercises](docs/learning/PHASE-01.md) → [Phase 2 data/performance](docs/learning/PHASE-02.md)
 7. [Eight-phase roadmap](docs/architecture/ROADMAP.md) and [local runbook](docs/runbooks/LOCAL_DEVELOPMENT.md)
 
 ### Interview checkpoint
@@ -185,4 +189,4 @@ Exercise: run a decline, replay its key, then change its quantity. Predict order
 
 ## Next small milestone
 
-Review the discovery assumptions, extend the bounded catalog/history APIs with an explicit pagination contract if needed, then begin Phase 2 measurements (query plans and a reproducible load baseline). Keep this modular-monolith version runnable. Do not introduce Kafka, caching or service extraction merely to fill the roadmap.
+Phase 2 is implemented and measured. Next is Phase 3 service extraction: define per-service data ownership, contracts, failure recovery and migration/rollback before splitting the local checkout transaction. Keep the Phase 1 branch runnable for comparison.

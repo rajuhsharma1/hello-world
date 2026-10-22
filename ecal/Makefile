@@ -4,7 +4,7 @@ MVN ?= mvn
 NPM ?= npm
 DOCKER ?= docker
 BACKEND := backend/modular-monolith
-.PHONY: help up down logs dev-db dev-backend dev-frontend install verify test e2e smoke
+.PHONY: help up down logs dev-db dev-backend dev-frontend install verify test e2e smoke benchmark
 help:
 	@echo 'ECAL: make up | down | logs | install | dev-db | dev-backend | dev-frontend | verify | e2e | smoke'
 	@echo 'up: full Docker stack at http://localhost:8090; verify: isolated PostgreSQL tests + frontend tests/build'
@@ -32,3 +32,7 @@ e2e:
 	ECAL_WEB_URL=$${ECAL_WEB_URL:-http://127.0.0.1:8090} $(NPM) run test:e2e --prefix frontend
 smoke:
 	python3 scripts/smoke.py
+
+benchmark:
+	$(MVN) -f $(BACKEND)/pom.xml -DskipTests package
+	python3 tests/performance/benchmark.py

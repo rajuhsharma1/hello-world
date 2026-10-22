@@ -1,6 +1,6 @@
 # HLD — the smallest useful commerce system
 
-Status: Phase 0 design baseline plus the first Phase 1 implementation. The diagrams below distinguish **current** components from **future learning options**. The uploaded blueprint supplies educational direction; its proposed commerce features and numerical targets are not verified bebo employer requirements or authorization to provision resources.
+Status: Phase 0 design baseline plus Phase 1 checkout and Phase 2 data/performance implementation. The diagrams below distinguish **current** components from **future learning options**. The uploaded blueprint supplies educational direction; its proposed commerce features and numerical targets are not verified bebo employer requirements or authorization to provision resources.
 
 ## Business boundary before deployment boundary
 
@@ -99,3 +99,21 @@ The dotted asynchronous path is Phase 4. Nothing in the current implementation c
 Run the documented backend integration suite against real PostgreSQL, the frontend test suite and the browser journey. Verify concurrent same-key requests, competing stock reservations, declined-payment release and persisted status after a read. Architecture tests should fail if domain code imports Spring/JDBC or one module imports another's implementation.
 
 Before scaling, ask: which requirement needs independent deployment; which invariant crosses the proposed boundary; how do we recover when only one side commits; what evidence justifies the added operating cost? These are stronger interview answers than listing infrastructure products.
+
+## Phase 2 additions to the current deployment
+
+The same JVM now serves cursor-paged catalog/history queries and a create-only CSV import. History is a synchronous read projection against the same database; no separate read service or asynchronous projection exists. The import coordinator admits one file per process, parses bounded input, schedules at most twenty batches on four workers, then returns all per-batch outcomes. Each worker transaction covers catalog product, inventory initialization through the Inventory API, and import fingerprint metadata. Reads and checkout continue on the shared twelve-connection pool. PostgreSQL remains the stock authority.
+
+```mermaid
+flowchart LR
+ Browser[Operator UI] --> Coordinator[Bounded CSV coordinator]
+ Coordinator --> Pool[Four workers / queue sixteen]
+ Pool --> Writer[Proxied batch writer]
+ Writer --> Catalog[(Catalog + import identity)]
+ Writer --> Inventory[Inventory API]
+ Inventory --> Stock[(Initial stock)]
+ Reader[Cursor read endpoints] --> Projection[SQL response projections]
+ Projection --> Index[(PostgreSQL indexes)]
+```
+
+The batch transaction is the atomic boundary; the file is deliberately not atomic. Crash recovery is exact file replay, not an in-memory job ID. [ADR-015](../adr/ADR-015-keyset-read-model.md) and [ADR-016](../adr/ADR-016-bounded-import.md) document alternatives, tradeoffs and rollback. [Performance evidence](../../tests/performance/REPORT.md) justifies the selective index and continued absence of application caching. Security/service extraction/eventing/cloud components remain future phases.

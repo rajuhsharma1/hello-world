@@ -48,6 +48,20 @@ class OpenApiContractTest {
   void publishedSchemasMatchTheActualHttpRecords() throws Exception {
     assertEquals(fields("Checkout"), fields(OrderController.Checkout.class));
     assertEquals(fields("Order"), fields(OrderView.class));
+    assertEquals(fields("ProductPage"), fields(com.ecal.shared.Page.class));
+    assertEquals(fields("OrderPage"), fields(com.ecal.shared.Page.class));
+    assertEquals(
+      fields("ImportResult"),
+      fields(
+        com.ecal.catalog.internal.importing.CatalogImportService.Result.class
+      )
+    );
+    assertEquals(
+      fields("ImportBatch"),
+      fields(
+        com.ecal.catalog.internal.importing.CatalogImportService.Batch.class
+      )
+    );
     assertEquals(
       fields("Product"),
       fields(

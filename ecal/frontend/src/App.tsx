@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, ApiError, restorePending, savePending } from "./api";
 import type { Order, PendingCheckout, Product } from "./api";
 import { money } from "./format";
 import { ProductCard } from "./components/ProductCard";
 import { OrderResult } from "./components/OrderResult";
+import { CatalogImport } from "./components/CatalogImport";
 import { OrderHistory } from "./components/OrderHistory";
 
 /** Owns one buyer journey; server data and transient form state do not yet warrant a global store. */
@@ -24,24 +25,57 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [recovered, setRecovered] = useState(false);
 
-  async function loadCatalog() {
+  const [catalogCursors, setCatalogCursors] = useState<(string | null)[]>([
+    null,
+  ]);
+  const [catalogNext, setCatalogNext] = useState<string | null>(null);
+  const [orderCursors, setOrderCursors] = useState<(string | null)[]>([null]);
+  const [orderNext, setOrderNext] = useState<string | null>(null);
+  const [status, setStatus] = useState("ALL");
+  const [catalogBusy, setCatalogBusy] = useState(false),
+    [historyBusy, setHistoryBusy] = useState(false);
+  const catalogVersion = useRef(0),
+    orderVersion = useRef(0);
+  async function loadCatalog(cursors: (string | null)[] = [null]) {
+    const version = ++catalogVersion.current;
+    setCatalogBusy(true);
     try {
-      setProducts(await api.products());
+      const page = await api.productsPage(cursors.at(-1) ?? null);
+      if (version !== catalogVersion.current) return;
+      setProducts(page.items);
+      setCatalogNext(page.nextCursor);
+      setCatalogCursors(cursors);
       setCatalogError("");
     } catch {
+      if (version !== catalogVersion.current) return;
       setCatalogError(
         "Catalog unavailable. Check that the backend is running, then refresh.",
       );
+    } finally {
+      if (version === catalogVersion.current) setCatalogBusy(false);
     }
   }
-  async function loadOrders() {
+  async function loadOrders(
+    cursors: (string | null)[] = [null],
+    filter = status,
+  ) {
+    const version = ++orderVersion.current;
+    setHistoryBusy(true);
     try {
-      setOrders(await api.orders());
+      const page = await api.ordersPage(filter, cursors.at(-1) ?? null);
+      if (version !== orderVersion.current) return;
+      setOrders(page.items);
+      setOrderNext(page.nextCursor);
+      setOrderCursors(cursors);
+      setStatus(filter);
       setHistoryError("");
     } catch {
+      if (version !== orderVersion.current) return;
       setHistoryError(
         "Order history is temporarily unavailable. Your saved orders remain in the database.",
       );
+    } finally {
+      if (version === orderVersion.current) setHistoryBusy(false);
     }
   }
   useEffect(() => {
@@ -132,7 +166,7 @@ export default function App() {
           <a href="#orders">Order history</a>
         </nav>
         <span className="phase-label">
-          <span /> PHASE 01 · LOCAL LAB
+          <span /> PHASE 02 · LOCAL LAB
         </span>
       </header>
       <main id="main">
@@ -214,7 +248,7 @@ export default function App() {
             <button
               className="text-button"
               onClick={() => void loadCatalog()}
-              disabled={loading}
+              disabled={loading || catalogBusy}
             >
               Refresh catalog <span aria-hidden="true">↻</span>
             </button>
@@ -233,6 +267,21 @@ export default function App() {
               No products available. Seed the local database to begin.
             </p>
           ) : null}
+          <div className="pagination" aria-label="Catalog pages">
+            <button
+              disabled={catalogBusy || catalogCursors.length === 1}
+              onClick={() => void loadCatalog(catalogCursors.slice(0, -1))}
+            >
+              Previous products
+            </button>
+            <span>Page {catalogCursors.length}</span>
+            <button
+              disabled={catalogBusy || !catalogNext}
+              onClick={() => void loadCatalog([...catalogCursors, catalogNext])}
+            >
+              Next products
+            </button>
+          </div>
           <div className="product-grid">
             {products.map((p, i) => (
               <ProductCard
@@ -246,15 +295,13 @@ export default function App() {
                   setQuantity(1);
                   setResult(null);
                   setCheckoutError("");
-                  document
-                    .getElementById("checkout")
-                    ?.scrollIntoView({
-                      behavior: matchMedia("(prefers-reduced-motion: reduce)")
-                        .matches
-                        ? "instant"
-                        : "smooth",
-                      block: "start",
-                    });
+                  document.getElementById("checkout")?.scrollIntoView({
+                    behavior: matchMedia("(prefers-reduced-motion: reduce)")
+                      .matches
+                      ? "instant"
+                      : "smooth",
+                    block: "start",
+                  });
                 }}
               />
             ))}
@@ -373,11 +420,40 @@ export default function App() {
         {result && <OrderResult result={result} recovered={recovered} />}
         <OrderHistory
           orders={orders}
-          loading={loading}
+          controls={
+            <div className="pagination">
+              <label htmlFor="history-status">Order status</label>
+              <select
+                id="history-status"
+                value={status}
+                disabled={historyBusy}
+                onChange={(e) => void loadOrders([null], e.target.value)}
+              >
+                <option value="ALL">All outcomes</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+              <button
+                disabled={historyBusy || orderCursors.length === 1}
+                onClick={() => void loadOrders(orderCursors.slice(0, -1))}
+              >
+                Newer orders
+              </button>
+              <span>Page {orderCursors.length}</span>
+              <button
+                disabled={historyBusy || !orderNext}
+                onClick={() => void loadOrders([...orderCursors, orderNext])}
+              >
+                Older orders
+              </button>
+            </div>
+          }
+          loading={loading || historyBusy}
           historyError={historyError}
           onRefresh={() => void loadOrders()}
           onView={(id) => void viewOrder(id)}
         />
+        <CatalogImport onImported={() => void loadCatalog()} />
       </main>
       <footer>
         <a className="brand footer-brand" href="#main">
@@ -387,7 +463,7 @@ export default function App() {
           </span>
         </a>
         <p>
-          Phase 0 foundations + the first Phase 1 vertical slice.
+          Phase 2 · bounded imports and indexed read paths.
           <br />
           Architecture is a set of decisions you can explain and prove.
         </p>

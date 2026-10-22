@@ -5,3 +5,5 @@ frontend/node_modules/
 frontend/test-results/
 frontend/playwright-report/
 backend/modular-monolith/target/
+tests/performance/results/
+tests/performance/__pycache__/

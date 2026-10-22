@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Enterprise Commerce Architecture Lab — Phase 1
-  version: 0.1.0
+  title: Enterprise Commerce Architecture Lab — Phase 2
+  version: 0.2.0
   description: |
     A loopback-only learning lab, not an authenticated commerce service.
     Prices and payment effects are simulated in INR. Each checkout contains
@@ -13,6 +13,91 @@ tags:
   - name: Catalog
   - name: Orders
 paths:
+  /api/catalog/products/page:
+    get:
+      tags: [Catalog]
+      operationId: pageProducts
+      summary: Keyset catalog page ordered by name then UUID
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Items and opaque nextCursor; null means no more items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/orders/page:
+    get:
+      tags: [Orders]
+      operationId: pageOrders
+      summary: Read projection ordered by createdAt descending then UUID descending
+      description: Cursor belongs to its status filter. The server selects the buyer. Pages are not a multi-request database snapshot.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ALL, CONFIRMED, CANCELLED]
+            default: ALL
+      responses:
+        '200':
+          description: At most limit orders and an opaque next cursor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/catalog/import:
+    post:
+      tags: [Catalog]
+      operationId: importCatalog
+      summary: Bounded synchronous create-only CSV import with independent batch transactions
+      description: |
+        UTF-8 RFC4180 CSV, at most 256 KiB and 1000 rows. Exact headers are
+        productId,name,description,price,currency,stock. Name is nonblank and at most
+        120 characters; description at most 500; positive numeric(12,2) price;
+        currency INR; stock 0–1000000. UUIDs must be unique within the file.
+        Structural errors reject the whole file before writes. Business validation or
+        existing-ID conflicts roll back the affected batch of 50, while other batches
+        commit. HTTP 200 can represent partial failure: inspect failedBatches.
+        Replay identical original product data to skip existing imports without
+        resetting stock. Infrastructure/commit uncertainty reports UNKNOWN, counted in failedBatches; created/skipped count only acknowledged commits. A timeout can leave committed batches; replay the file.
+        One file per process, four workers, at most twenty batches. Not a durable job API.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: All batch outcomes, including partial failures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '413':
+          description: File or request exceeds upload limit
+        '429':
+          description: Another import is running in this process; retry later
   /api/catalog/products:
     get:
       tags: [Catalog]
@@ -131,6 +216,22 @@ paths:
         '503':
           $ref: '#/components/responses/StorageUnavailable'
 components:
+  parameters:
+    Limit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+    Cursor:
+      in: query
+      name: cursor
+      description: Opaque versioned continuation token from the same endpoint and filter; never an authorization credential
+      schema:
+        type: string
+        maxLength: 1024
   responses:
     InternalError:
       description: Unexpected failure; do not assume a new logical checkout is safe after an unknown HTTP result
@@ -157,6 +258,52 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
   schemas:
+    ProductPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Product'
+        nextCursor:
+          type: [string, 'null']
+    OrderPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Order'
+        nextCursor:
+          type: [string, 'null']
+    ImportResult:
+      type: object
+      required: [totalRows, created, skipped, committedBatches, failedBatches, batches]
+      properties:
+        totalRows: {type: integer, minimum: 1, maximum: 1000}
+        created: {type: integer, minimum: 0}
+        skipped: {type: integer, minimum: 0}
+        committedBatches: {type: integer, minimum: 0, maximum: 20}
+        failedBatches: {type: integer, minimum: 0, maximum: 20}
+        batches:
+          type: array
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/ImportBatch'
+    ImportBatch:
+      type: object
+      required: [index, status, rows, created, skipped, error]
+      properties:
+        index: {type: integer, minimum: 1, maximum: 20}
+        status: {type: string, enum: [COMMITTED, ROLLED_BACK, UNKNOWN]}
+        rows: {type: integer, minimum: 1, maximum: 50}
+        created: {type: integer, minimum: 0}
+        skipped: {type: integer, minimum: 0}
+        error: {type: [string, 'null']}
     Money:
       type: string
       pattern: '^[0-9]+\.[0-9]{2}$'

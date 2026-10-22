@@ -22,3 +22,7 @@ These settings support the current small local lab. A number in configuration is
 | CI scoped to `ecal/**` | Exercise this independent project without changing the Ark reactor | Hosted CI is not asserted from local evidence; security/license scans remain Phase6 work | The same make targets were exercised locally; inspect future hosted job results separately |
 
 The safe interview answer is conditional: “These defaults bound the current local exercise. I would measure the actual workload and failure behavior before claiming the pool size, timeout budget, SLO or deployment is appropriate for a customer.”
+
+## Phase 2 fixed bounds
+
+CSV file 256 KiB; multipart request 300 KiB; 1000 rows; batches 50; four workers; queue sixteen; one in-flight file per JVM. Import worker transactions use a ten-second timeout. Nginx exact import route and browser use 120-second read/request timeouts; ordinary requests keep fifteen seconds. Hikari stays at twelve connections. These bounds are deliberate fixed lab choices, not undocumented environment variables or measured production sizing.

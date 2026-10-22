@@ -1,6 +1,10 @@
 spring:
   application:
     name: ecal-monolith
+  servlet:
+    multipart:
+      max-file-size: 256KB
+      max-request-size: 300KB
   datasource:
     url: ${ECAL_DB_URL:jdbc:postgresql://localhost:5544/ecal}
     username: ${ECAL_DB_USER:ecal}

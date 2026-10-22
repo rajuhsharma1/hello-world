@@ -2,12 +2,14 @@ import type { Order } from "../api";
 import { money, when } from "../format";
 /** A read-only projection of REST results; callbacks keep network behavior in the journey coordinator. */
 export function OrderHistory({
+  controls,
   orders,
   loading,
   historyError,
   onRefresh,
   onView,
 }: {
+  controls: React.ReactNode;
   orders: Order[];
   loading: boolean;
   historyError: string;
@@ -30,9 +32,10 @@ export function OrderHistory({
         </button>
       </div>
       <p className="section-description">
-        Latest 50 orders for the shared demo buyer, read from PostgreSQL.
+        Twenty orders per page for the shared demo buyer, read from PostgreSQL.
         Refreshing the page does not erase them.
       </p>
+      {controls}
       {historyError && (
         <p className="notice error" role="alert">
           {historyError}

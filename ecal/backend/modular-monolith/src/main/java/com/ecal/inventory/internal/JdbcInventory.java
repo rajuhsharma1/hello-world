@@ -61,6 +61,21 @@ class JdbcInventory implements Inventory {
     ) throw new IllegalStateException("Missing reserved inventory row.");
   }
 
+  @org.springframework.transaction.annotation.Transactional(
+    propagation = org.springframework.transaction.annotation.Propagation.MANDATORY
+  )
+  @Override
+  public void initializeStock(UUID productId, int stock) {
+    if (stock < 0 || stock > 1000000) throw new IllegalArgumentException(
+      "Stock must be 0–1000000."
+    );
+    db.update(
+      "insert into inventory_stock(product_id,available) values (?,?)",
+      productId,
+      stock
+    );
+  }
+
   @Override
   public Map<UUID, Integer> availability(java.util.List<UUID> productIds) {
     Map<UUID, Integer> result = new HashMap<>();

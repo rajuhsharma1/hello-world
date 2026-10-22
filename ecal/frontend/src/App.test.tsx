@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
 import type { Order, Product } from "./api";
@@ -39,9 +45,11 @@ beforeEach(() => {
     return json(confirmed, 201);
   };
   fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
-    if (url === "/api/catalog/products") return json([product]);
+    if (url.startsWith("/api/catalog/products/page"))
+      return json({ items: [product], nextCursor: null });
     if (url === "/api/orders" && init.method === "POST") return post(init);
-    if (url === "/api/orders") return json(orders);
+    if (url.startsWith("/api/orders/page"))
+      return json({ items: orders, nextCursor: null });
     if (url.startsWith("/api/orders/")) return json(confirmed);
     throw new Error("Unexpected request " + url);
   });
@@ -204,5 +212,106 @@ describe("buyer journey", () => {
       screen.getByRole("button", { name: /Retry same checkout/ }),
     ).toBeEnabled();
     expect(sessionStorage.getItem("ecal.pendingCheckout.v1")).not.toBeNull();
+  });
+});
+
+describe("Phase 2 read and import controls", () => {
+  it("navigates catalog cursors and resets after refresh", async () => {
+    const original = fetchMock.getMockImplementation() as (
+      url: string,
+      init?: RequestInit,
+    ) => Promise<Response>;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.startsWith("/api/catalog/products/page"))
+        return url.includes("cursor=")
+          ? json({
+              items: [
+                {
+                  ...product,
+                  id: "10000000-0000-0000-0000-000000000002",
+                  name: "Second page lamp",
+                },
+              ],
+              nextCursor: null,
+            })
+          : json({ items: [product], nextCursor: "opaque-next-cursor" });
+      return original(url, init);
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Next products" }),
+      ).toBeEnabled(),
+    );
+    await user.click(screen.getByRole("button", { name: "Next products" }));
+    await screen.findByRole("button", { name: /Choose Second page lamp/ });
+    expect(
+      screen.getByRole("button", { name: "Next products" }),
+    ).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /Refresh catalog/ }));
+    await screen.findByRole("button", { name: /Choose Field notebook/ });
+    expect(
+      screen.getByRole("button", { name: "Previous products" }),
+    ).toBeDisabled();
+  });
+  it("passes the selected order filter to the server", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("button", { name: /Choose Field notebook/ });
+    await user.selectOptions(
+      screen.getByLabelText("Order status"),
+      "CANCELLED",
+    );
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url]) => url === "/api/orders/page?limit=20&status=CANCELLED",
+        ),
+      ).toBe(true),
+    );
+  });
+  it("shows partial import outcomes and a safe replay instruction", async () => {
+    const original = fetchMock.getMockImplementation() as (
+      url: string,
+      init?: RequestInit,
+    ) => Promise<Response>;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+      url === "/api/catalog/import"
+        ? json({
+            totalRows: 51,
+            created: 50,
+            skipped: 0,
+            committedBatches: 1,
+            failedBatches: 1,
+            batches: [
+              {
+                index: 2,
+                status: "ROLLED_BACK",
+                rows: 1,
+                created: 0,
+                skipped: 0,
+                error: "Check fields.",
+              },
+            ],
+          })
+        : original(url, init),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    await user.upload(
+      screen.getByLabelText("Catalog CSV"),
+      new File(["csv"], "catalog.csv", { type: "text/csv" }),
+    );
+    // jsdom's required file validity does not observe user-event's uploaded FileList.
+    // Real browser E2E covers native submit validation; exercise the handler here.
+    fireEvent.submit(
+      screen.getByRole("button", { name: "Import catalog" }).closest("form")!,
+    );
+    await screen.findByText("Import partially completed");
+    expect(
+      screen.getByText(/50 created · 0 skipped · 1 failed batches/),
+    ).toBeVisible();
+    expect(screen.getByText(/Correct failed rows and replay/)).toBeVisible();
   });
 });

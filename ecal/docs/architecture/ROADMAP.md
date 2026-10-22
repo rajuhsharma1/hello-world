@@ -1,6 +1,6 @@
 # Delivery roadmap and review gates
 
-This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery implements only the first small Phase 1 slice. A reviewer has not yet approved every assumption.
+This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery includes Phase 2 database/read/import experiments. A reviewer has not yet approved every assumption.
 
 | Phase | Small objective | Evidence to exit | Revisit / rollback point |
 |---|---|---|---|
@@ -15,7 +15,7 @@ This roadmap is a sequence of experiments, not a requirement to deploy every too
 
 ## Next recommended slice
 
-Before extraction, finish Phase 1 with richer domain edge cases only if the baseline exposes a learning gap: multi-line order lock ordering, explicit cancellation/refund semantics, and bounded order-history pagination are candidates. Then measure a real query in Phase 2. Do not add Redis merely to satisfy a vocabulary checklist.
+Phase 2 is implemented; see [its learning guide](../learning/PHASE-02.md) and [observed evidence](../../tests/performance/REPORT.md). Next, Phase 3 can extract a boundary while retaining the Phase 1 monolith baseline. Define ownership, timeout/retry contracts and recovery for partial failure before introducing cross-service writes. Redis remains deferred because the measured index solved the demonstrated read bottleneck.
 
 ## Governance light enough to use
 

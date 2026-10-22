@@ -32,3 +32,5 @@ Ask for requirement, options, failure mode and evidence before accepting a techn
 - [React state guidance](https://react.dev/learn/managing-state) and [useState](https://react.dev/reference/react/useState).
 - [OpenAPI 3.1 specification](https://spec.openapis.org/oas/v3.1.0) and [RFC 9457 problem details](https://www.rfc-editor.org/rfc/rfc9457.html).
 - [Testcontainers PostgreSQL module](https://java.testcontainers.org/modules/databases/postgres/): integration tests need a working container runtime.
+
+Phase 2 accepted decisions: [ADR-015 keyset read models](adr/ADR-015-keyset-read-model.md), [ADR-016 bounded import](adr/ADR-016-bounded-import.md). [ADR-010](adr/ADR-010-cache.md) now records the measured reason to continue without an application cache.

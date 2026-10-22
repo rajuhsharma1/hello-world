@@ -45,3 +45,15 @@ All backend source paths below start at `backend/modular-monolith/src/main/java/
 | Multi-AZ/ECS/EKS recovery | No deployment | Reviewed architecture and actual rehearsal with observed outcomes |
 
 A requirement is not “done” because an ADR mentions it. Update this map when scope or evidence changes; preserve the previous decision when it is superseded.
+
+## Phase 2 extensions
+
+| Learning requirement | Decision | Code | Executable proof / observed evidence |
+|---|---|---|---|
+| Bounded pagination and selective filtering | ADR-015 | `PageCursor`, `OrderHistoryQuery`, `CatalogController.page`, V4 indexes | PhaseTwoIntegrationTestIT keyset/tie/filter/buyer tests; frontend cursor/filter tests |
+| N+1 and projection reasoning | ADR-003/015 | JDBC projection + bulk inventory availability | Physical SELECT counter: catalog page sizes 1 and 20 use two queries; history one |
+| Measured SQL optimization | ADR-010/015 | V4 status covering index; `tests/performance/benchmark.py` | Same endpoint/dataset/hardware baseline/indexed two-round raw latencies and EXPLAIN in `tests/performance/observed-2026-10-22` |
+| Bounded concurrent import and transaction policy | ADR-016 | `catalog/internal/importing`, Inventory.initializeStock, V5 | Latch-driven four-worker/admission test; PostgreSQL batch rollback, partial recovery and stock-preserving replay tests |
+| UI/operator outcomes and contracts | ADR-004/011/016 | `CatalogImport`, cursor controls, OpenAPI | RTL partial outcome/filter/page tests; structural DTO guards; browser upload/replay |
+
+These are Phase 2 learning extensions, not newly attributed employer business requirements. Their actual pass/fail observations are in `ecal/VALIDATION.md`.

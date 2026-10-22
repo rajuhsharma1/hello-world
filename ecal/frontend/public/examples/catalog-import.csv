@@ -1,0 +1,3 @@
+productId,name,description,price,currency,stock
+20000000-0000-0000-0000-000000000101,Reading journal,An example imported product,299.00,INR,25
+20000000-0000-0000-0000-000000000102,"Notebook, ruled",CSV supports quoted commas,199.50,INR,10
