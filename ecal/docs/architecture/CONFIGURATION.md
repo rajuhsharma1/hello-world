@@ -26,3 +26,9 @@ The safe interview answer is conditional: “These defaults bound the current lo
 ## Phase 2 fixed bounds
 
 CSV file 256 KiB; multipart request 300 KiB; 1000 rows; batches 50; four workers; queue sixteen; one in-flight file per JVM. Import worker transactions use a ten-second timeout. Nginx exact import route and browser use 120-second read/request timeouts; ordinary requests keep fifteen seconds. Hikari stays at twelve connections. These bounds are deliberate fixed lab choices, not undocumented environment variables or measured production sizing.
+
+## Phase 3 mode
+
+`compose.phase3.yaml` uses separate credentials/volumes and publishes only loopback 8091. `ECAL_PHASE3_ORDERS_PASSWORD`, `ECAL_PHASE3_INVENTORY_PASSWORD`, `ECAL_PHASE3_PAYMENT_PASSWORD` are optional private Compose settings; changing environment values does not rotate a retained PostgreSQL role password. Defaults are isolated synthetic-lab values. Each service reads only its ECAL_DB_URL/USER/PASSWORD. Orders additionally reads ECAL_INVENTORY_URL, ECAL_PAYMENT_URL and finite ECAL_REMOTE_CONNECT_MS/REQUEST_MS (500/2000 default; validated ranges 50–2000/100–5000). Lease duration is fixed at 30 seconds; writes match its token. Health checks cover the node's database, not global workflow availability.
+
+Module-specific configuration files are inventory-application.yaml, payment-application.yaml and orders-application.yaml. Each main sets its own config name. Full Docker uses service port 8080 internally. Host IDE defaults: Orders 8092/database 5545, Inventory 8093/5546, Payment 8094/5547. The dev Compose override publishes only the database loopback ports. Vite uses `VITE_ECAL_MODE=distributed` at build/dev time and `ECAL_API_TARGET=http://127.0.0.1:8092` for the dev proxy. Do not run Docker app mode and IDE services against the same working dataset concurrently.

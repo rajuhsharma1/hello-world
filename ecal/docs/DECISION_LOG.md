@@ -34,3 +34,5 @@ Ask for requirement, options, failure mode and evidence before accepting a techn
 - [Testcontainers PostgreSQL module](https://java.testcontainers.org/modules/databases/postgres/): integration tests need a working container runtime.
 
 Phase 2 accepted decisions: [ADR-015 keyset read models](adr/ADR-015-keyset-read-model.md), [ADR-016 bounded import](adr/ADR-016-bounded-import.md). [ADR-010](adr/ADR-010-cache.md) now records the measured reason to continue without an application cache.
+
+Phase 3 accepted decisions: [ADR-017 service extraction](adr/ADR-017-service-extraction.md), [ADR-018 durable HTTP workflow](adr/ADR-018-durable-http-workflow.md), [ADR-019 bounded HTTP and correlation](adr/ADR-019-http-observability.md), [ADR-020 offline ownership cutover](adr/ADR-020-offline-ownership-cutover.md). ADR-001/008 remain baseline rationale; ADR-006 is explicitly superseded for synchronous compensation, with event execution still deferred.

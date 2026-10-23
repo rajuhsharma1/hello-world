@@ -1,0 +1,409 @@
+openapi: 3.1.0
+info:
+  title: ECAL Phase 3 Orders API
+  version: 1.0.0
+  description: Loopback-only learning stack. /api/v1 is the versioned Orders contract;
+    matching /api routes are compatibility aliases for the Phase 2 UI. Intermediate
+    states are durable paused work. Replay the same key and payload to resume. There
+    is no background worker, authentication or real payment.
+servers:
+- url: /
+tags:
+- name: Catalog
+- name: Orders
+paths:
+  /api/v1/catalog/products/page:
+    get:
+      tags:
+      - Catalog
+      operationId: pageProducts
+      summary: Keyset catalog page ordered by name then UUID
+      parameters:
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Items and opaque nextCursor; null means no more items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/v1/orders/page:
+    get:
+      tags:
+      - Orders
+      operationId: pageOrders
+      summary: Read projection ordered by createdAt descending then UUID descending
+      description: Cursor belongs to its status filter. The server selects the buyer.
+        Pages are not a multi-request database snapshot.
+      parameters:
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cursor'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - ALL
+          - CONFIRMED
+          - CANCELLED
+          - REJECTED
+          - PENDING
+          - RESERVED
+          - PAYMENT_UNKNOWN
+          - RELEASE_PENDING
+          default: ALL
+      responses:
+        '200':
+          description: At most limit orders and an opaque next cursor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/v1/catalog/products:
+    get:
+      tags:
+      - Catalog
+      operationId: listProducts
+      summary: Browse the demonstration catalog and current stock
+      description: Stock is a point-in-time hint, not a reservation guarantee.
+      responses:
+        '200':
+          description: Products and decimal-string prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+  /api/v1/orders:
+    get:
+      tags:
+      - Orders
+      operationId: listOrders
+      summary: Latest 50 orders for the fixed demonstration buyer
+      responses:
+        '200':
+          description: Newest orders first; this bounded history is not a paginated
+            enterprise query API
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 50
+                items:
+                  $ref: '#/components/schemas/Order'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+    post:
+      tags:
+      - Orders
+      operationId: placeOrder
+      summary: Place or replay a single-product simulated checkout
+      description: The same buyer/key/payload replays or resumes the existing durable
+        order. Do not invent a new key after a timeout. Stock rejection is a persisted
+        REJECTED attempt; its 409 does not roll back the existing order. An uncertain
+        503 can mean remote work committed; keep the exact key/payload. Confirmed/cancelled
+        replays return the original snapshot.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: true
+        description: Logical checkout identity; not an authentication credential
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+      responses:
+        '201':
+          description: Newly committed order, including a persisted simulated decline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '200':
+          description: Existing order returned for an identical committed request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Persisted stock rejection or changed payload under an existing
+            key. No second logical checkout is created.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+          description: Dependency failure, uncertain acknowledgement or another recovery
+            lease owner. Resume with identical key/payload; do not infer payment decline.
+  /api/v1/orders/{id}:
+    get:
+      tags:
+      - Orders
+      operationId: getOrder
+      summary: Read persisted status for the demonstration buyer
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Persisted order snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/StorageUnavailable'
+components:
+  parameters:
+    Limit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 20
+    Cursor:
+      in: query
+      name: cursor
+      description: Opaque versioned continuation token from the same endpoint and
+        filter; never an authorization credential
+      schema:
+        type: string
+        maxLength: 1024
+  responses:
+    InternalError:
+      description: Unexpected failure; do not assume a new logical checkout is safe
+        after an unknown HTTP result
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    StorageUnavailable:
+      description: Database operation could not complete; retry the identical checkout/key
+        to resolve uncertainty
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InvalidRequest:
+      description: Invalid JSON, UUID, missing header, quantity or simulator choice
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Product or demonstration-buyer order not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    ProductPage:
+      type: object
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Product'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    OrderPage:
+      type: object
+      required:
+      - items
+      - nextCursor
+      properties:
+        items:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Order'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+    Money:
+      type: string
+      pattern: ^[0-9]+\.[0-9]{2}$
+      examples:
+      - '1299.00'
+      description: Exact decimal string. Clients must not use a floating-point total
+        as payment authority.
+    Product:
+      type: object
+      required:
+      - id
+      - name
+      - description
+      - price
+      - currency
+      - availableStock
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: INR
+        availableStock:
+          type: integer
+          minimum: 0
+    Checkout:
+      type: object
+      additionalProperties: false
+      required:
+      - productId
+      - quantity
+      - paymentOutcome
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        paymentOutcome:
+          type: string
+          enum:
+          - APPROVE
+          - DECLINE
+    Order:
+      type: object
+      required:
+      - id
+      - productId
+      - productName
+      - quantity
+      - unitPrice
+      - totalAmount
+      - currency
+      - status
+      - paymentStatus
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        productName:
+          type: string
+          description: Name snapshot at checkout; future catalog changes do not rewrite
+            history
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        totalAmount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: INR
+        status:
+          type: string
+          enum:
+          - PENDING
+          - RESERVED
+          - PAYMENT_UNKNOWN
+          - RELEASE_PENDING
+          - CONFIRMED
+          - CANCELLED
+          - REJECTED
+          description: Terminal result or durable workflow progress; a timeout never
+            implies a declined payment.
+        paymentStatus:
+          type:
+          - string
+          - 'null'
+          enum:
+          - AUTHORIZED
+          - DECLINED
+          - null
+        createdAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required:
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          description: Stable application error code; clients should not parse human-readable
+            prose
+        correlationId:
+          type: string
+          format: uuid

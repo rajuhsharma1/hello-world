@@ -21,7 +21,11 @@ export function OrderResult({
         <h2 id="result-title">
           {result.status === "CONFIRMED"
             ? "Your order is confirmed."
-            : "Payment declined. Stock released."}
+            : result.status === "CANCELLED"
+              ? "Payment declined. Stock released."
+              : result.status === "REJECTED"
+                ? "Stock unavailable. Order rejected."
+                : "Order is awaiting recovery."}
         </h2>
         <p>
           {result.productName} · {result.quantity}{" "}
@@ -40,7 +44,7 @@ export function OrderResult({
         </div>
         <div>
           <dt>Simulated payment</dt>
-          <dd>{result.paymentStatus}</dd>
+          <dd>{result.paymentStatus ?? "Not yet acknowledged"}</dd>
         </div>
       </dl>
     </section>

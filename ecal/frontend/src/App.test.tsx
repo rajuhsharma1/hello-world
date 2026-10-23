@@ -315,3 +315,75 @@ describe("Phase 2 read and import controls", () => {
     expect(screen.getByText(/Correct failed rows and replay/)).toBeVisible();
   });
 });
+
+describe("Phase 3 distributed mode", () => {
+  it("shows the three-service boundary and keeps monolith-only CSV operations out of this mode", async () => {
+    vi.stubEnv("VITE_ECAL_MODE", "distributed");
+    try {
+      render(<App />);
+      await screen.findByRole("button", { name: /Choose Field notebook/ });
+      expect(screen.getByText("PHASE 03 · THREE SERVICES")).toBeVisible();
+      expect(
+        screen.getByText("Independent transaction boundaries"),
+      ).toBeVisible();
+      expect(screen.queryByLabelText("Catalog CSV")).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+  it("displays a paused history result without inventing a payment decline", async () => {
+    const paused = {
+      ...confirmed,
+      status: "PAYMENT_UNKNOWN",
+      paymentStatus: null,
+    };
+    orders = [paused as Order];
+    const original = fetchMock.getMockImplementation() as (
+      url: string,
+      init?: RequestInit,
+    ) => Promise<Response>;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+      url === "/api/orders/" + confirmed.id
+        ? json(paused)
+        : original(url, init),
+    );
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(
+      await screen.findByRole("button", { name: "View order " + confirmed.id }),
+    );
+    await screen.findByRole("heading", { name: "Order is awaiting recovery." });
+    expect(screen.getByText("Not yet acknowledged")).toBeVisible();
+    expect(
+      screen.queryByRole("heading", {
+        name: "Payment declined. Stock released.",
+      }),
+    ).not.toBeInTheDocument();
+  });
+  it("retains an uncertain checkout identity and presents its correlation reference", async () => {
+    const reference = "30000000-0000-0000-0000-000000000003";
+    post = async () =>
+      new Response(
+        JSON.stringify({
+          detail: "Dependency timeout",
+          code: "DEPENDENCY_UNAVAILABLE",
+        }),
+        {
+          status: 503,
+          headers: {
+            "Content-Type": "application/problem+json",
+            "X-Correlation-ID": reference,
+          },
+        },
+      );
+    const user = await choose();
+    await user.click(
+      screen.getByRole("button", { name: /Place simulated order/ }),
+    );
+    await screen.findByText(new RegExp(reference));
+    expect(sessionStorage.getItem("ecal.pendingCheckout.v1")).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: /Retry same checkout/ }),
+    ).toBeEnabled();
+  });
+});

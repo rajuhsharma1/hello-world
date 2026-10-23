@@ -1,6 +1,6 @@
 # HLD — the smallest useful commerce system
 
-Status: Phase 0 design baseline plus Phase 1 checkout and Phase 2 data/performance implementation. The diagrams below distinguish **current** components from **future learning options**. The uploaded blueprint supplies educational direction; its proposed commerce features and numerical targets are not verified bebo employer requirements or authorization to provision resources.
+Status: this document describes the preserved Phase 0–2 monolith. The implemented distributed mode has its own [Phase 3 HLD](PHASE-03-HLD.md) and [LLD](PHASE-03-LLD.md). The diagrams below distinguish **current** components from **future learning options**. The uploaded blueprint supplies educational direction; its proposed commerce features and numerical targets are not verified bebo employer requirements or authorization to provision resources.
 
 ## Business boundary before deployment boundary
 

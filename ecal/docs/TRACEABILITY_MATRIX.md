@@ -57,3 +57,18 @@ A requirement is not “done” because an ADR mentions it. Update this map when
 | UI/operator outcomes and contracts | ADR-004/011/016 | `CatalogImport`, cursor controls, OpenAPI | RTL partial outcome/filter/page tests; structural DTO guards; browser upload/replay |
 
 These are Phase 2 learning extensions, not newly attributed employer business requirements. Their actual pass/fail observations are in `ecal/VALIDATION.md`.
+
+## Phase 3 extensions and changed semantics
+
+| Requirement / learning scenario | Decision | Implementation | Proof location |
+|---|---|---|---|
+| Independent service/data ownership | ADR-017 | Three service modules/migration locations and Compose databases | ArchUnit BoundariesTest; credential-isolation integration test; Compose port inspection |
+| Versioned service contracts | ADR-019 | phase3-orders/inventory/payment OpenAPI; independent remote DTOs | ContractsTest structural guards plus real HTTP validation/replay/additive/malformed cases |
+| No duplicate stock/payment effects under replay | ADR-018 | Reservation/payment ledgers; unique buyer/key and token-fenced order steps | Same-key race, last-unit race, release tombstone and changed-payload tests |
+| Durable uncertainty and compensation | ADR-018 | PAYMENT_UNKNOWN/RELEASE_PENDING, no HTTP inside SQL transactions | Lost acknowledgements, payment timeout, local final-commit failure, failed compensation and Orders restart |
+| Stable original order snapshots/history | ADR-017/018 | Orders-owned catalog/snapshots; keyset history; nullable pending payment status | Read/buyer-scope integration tests; UI paused result test; checkout/reload browser journey |
+| Correlation across service hops | ADR-019 | RequestContext, structured logs, support reference | W3C/correlation integration test; UI reference test; live logs |
+| Backfill/cutover/rollback ownership | ADR-020 | phase3_migrate.py export/preflight/copy/receipt/full-row verification | Real Phase 2 schema -> three owners, partial-copy resume, checksum/drift guards, original-key replay |
+| Real outage and caller recovery | ADR-018/019 | phase3_failure_lab.py | Payment container stop/start, persisted unknown state, same-key replay, private DB effect counts |
+
+In distributed mode, an insufficient-stock attempt is a persisted REJECTED order, unlike FR-08's rolled-back monolith claim. This semantic change is explicit in ADR-018 and the Phase 3 contract. Phase 2 CSV remains monolith-only; no cross-database atomic import is claimed. Phase 3's synchronous read projection is not an asynchronous CQRS store. Observed outcomes belong in `ecal/VALIDATION.md`.

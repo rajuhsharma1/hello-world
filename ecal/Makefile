@@ -36,3 +36,19 @@ smoke:
 benchmark:
 	$(MVN) -f $(BACKEND)/pom.xml -DskipTests package
 	python3 tests/performance/benchmark.py
+
+.PHONY: phase3-up phase3-down phase3-logs phase3-verify phase3-e2e phase3-failure-lab
+phase3-up:
+	$(DOCKER) compose -f compose.phase3.yaml up --build --wait --wait-timeout 180
+phase3-down:
+	$(DOCKER) compose -f compose.phase3.yaml down
+phase3-logs:
+	$(DOCKER) compose -f compose.phase3.yaml logs -f --tail=80 api inventory payment
+phase3-verify:
+	$(MVN) -f backend/distributed/pom.xml verify
+	$(NPM) test --prefix frontend
+	VITE_ECAL_MODE=distributed $(NPM) run build --prefix frontend
+phase3-e2e:
+	ECAL_MODE=distributed ECAL_WEB_URL=$${ECAL_WEB_URL:-http://127.0.0.1:8091} $(NPM) run test:e2e --prefix frontend
+phase3-failure-lab:
+	python3 scripts/phase3_failure_lab.py

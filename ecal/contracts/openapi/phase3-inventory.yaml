@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: ECAL Inventory internal API
+  version: 1.0.0
+  description: Private service network only. Reservation identity is orderId plus
+    immutable productId/quantity. Rejection is durable. Released tombstones forbid
+    a delayed reserve. No cross-service transaction, TTL or implicit stock expiry.
+paths:
+  /internal/v1/reservations/{orderId}:
+    put:
+      operationId: reserve
+      parameters: &id001
+      - in: path
+        name: orderId
+        required: true
+        schema: &id003
+          type: string
+          format: uuid
+      requestBody: &id002
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Command'
+      responses:
+        '200':
+          description: RESERVED, including an identical replay; stock decremented
+            once.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '409':
+          description: Durable REJECTED/RELEASED reservation body, or identity conflict
+            Problem.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '400':
+          description: Invalid command.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Unknown stock product.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Outcome uncertain; retry exact identity.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /internal/v1/reservations/{orderId}/release:
+    put:
+      operationId: release
+      parameters: *id001
+      requestBody: *id002
+      responses:
+        '200':
+          description: Idempotent release; a first release before reserve creates
+            a RELEASED tombstone. A previously REJECTED attempt remains REJECTED.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '409':
+          description: Changed reservation payload.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '400':
+          description: Invalid command.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Outcome uncertain; retry exact identity.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /internal/v1/stock:
+    get:
+      operationId: availability
+      parameters:
+      - in: query
+        name: ids
+        required: true
+        style: form
+        explode: false
+        schema:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items: *id003
+      responses:
+        '200':
+          description: Map of requested existing product UUID to advisory nonnegative
+            stock.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  minimum: 0
+        '400':
+          description: Invalid UUID list.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Storage failure.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    Command:
+      type: object
+      required:
+      - productId
+      - quantity
+      properties:
+        productId: *id003
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+      additionalProperties: false
+    Reservation:
+      type: object
+      required:
+      - orderId
+      - productId
+      - quantity
+      - state
+      properties:
+        orderId: *id003
+        productId: *id003
+        quantity:
+          type: integer
+        state:
+          type: string
+          enum:
+          - RESERVED
+          - REJECTED
+          - RELEASED
+    Problem:
+      type: object
+      required:
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid

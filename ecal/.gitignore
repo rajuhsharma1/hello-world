@@ -7,3 +7,6 @@ frontend/playwright-report/
 backend/modular-monolith/target/
 tests/performance/results/
 tests/performance/__pycache__/
+backend/distributed/**/target/
+migration-exports/
+scripts/__pycache__/

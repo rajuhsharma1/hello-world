@@ -20,8 +20,15 @@ export interface Order {
   unitPrice: string;
   totalAmount: string;
   currency: "INR";
-  status: "CONFIRMED" | "CANCELLED";
-  paymentStatus: "AUTHORIZED" | "DECLINED";
+  status:
+    | "CONFIRMED"
+    | "CANCELLED"
+    | "PENDING"
+    | "RESERVED"
+    | "PAYMENT_UNKNOWN"
+    | "RELEASE_PENDING"
+    | "REJECTED";
+  paymentStatus: "AUTHORIZED" | "DECLINED" | null;
   createdAt: string;
 }
 export interface PendingCheckout {
@@ -35,6 +42,7 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly code: string,
+    readonly correlationId: string | null = null,
   ) {
     super(message);
   }
@@ -68,7 +76,12 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
       body && typeof body === "object" && "code" in body
         ? String(body.code)
         : "";
-    throw new ApiError(detail, response.status, code);
+    throw new ApiError(
+      detail,
+      response.status,
+      code,
+      response.headers.get("X-Correlation-ID"),
+    );
   }
   if (body === null) throw new Error("The server response was incomplete.");
   return body as T;

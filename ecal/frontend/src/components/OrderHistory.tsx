@@ -33,7 +33,8 @@ export function OrderHistory({
       </div>
       <p className="section-description">
         Twenty orders per page for the shared demo buyer, read from PostgreSQL.
-        Refreshing the page does not erase them.
+        Refreshing the page does not erase them. Intermediate states represent
+        paused work, not a declined payment.
       </p>
       {controls}
       {historyError && (

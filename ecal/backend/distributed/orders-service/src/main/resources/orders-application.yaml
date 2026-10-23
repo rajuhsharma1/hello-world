@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: ecal-orders
+  datasource:
+    url: ${ECAL_DB_URL:jdbc:postgresql://127.0.0.1:5545/orders}
+    username: ${ECAL_DB_USER:orders}
+    password: ${ECAL_DB_PASSWORD:orders_dev_only}
+    hikari:
+      maximum-pool-size: 12
+      connection-timeout: 2000
+  flyway:
+    locations: classpath:db/orders
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  address: ${ECAL_BIND_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8092}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+logging:
+  structured:
+    format:
+      console: logstash
+ecal:
+  inventory-url: ${ECAL_INVENTORY_URL:http://127.0.0.1:8093}
+  payment-url: ${ECAL_PAYMENT_URL:http://127.0.0.1:8094}
+  remote-connect-ms: ${ECAL_REMOTE_CONNECT_MS:500}
+  remote-request-ms: ${ECAL_REMOTE_REQUEST_MS:2000}

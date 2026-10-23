@@ -1,0 +1,101 @@
+# Separate databases/volumes and port: Phase 2 keeps running at 8090 while this lab uses 8091.
+name: ecal-phase3
+x-health: &health
+  interval: 5s
+  timeout: 3s
+  retries: 30
+  start_period: 15s
+x-app: &app
+  restart: unless-stopped
+  healthcheck:
+    <<: *health
+    test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health"]
+services:
+  orders-db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: ${ECAL_PHASE3_ORDERS_PASSWORD:-orders_dev_only}
+    volumes: [orders-data:/var/lib/postgresql/data]
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, "pg_isready -U orders -d orders"]
+  inventory-db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: ${ECAL_PHASE3_INVENTORY_PASSWORD:-inventory_dev_only}
+    volumes: [inventory-data:/var/lib/postgresql/data]
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, "pg_isready -U inventory -d inventory"]
+  payment-db:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: payment
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: ${ECAL_PHASE3_PAYMENT_PASSWORD:-payment_dev_only}
+    volumes: [payment-data:/var/lib/postgresql/data]
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, "pg_isready -U payment -d payment"]
+  inventory:
+    <<: *app
+    build:
+      context: backend/distributed
+      args: {SERVICE: inventory-service}
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://inventory-db:5432/inventory
+      ECAL_DB_USER: inventory
+      ECAL_DB_PASSWORD: ${ECAL_PHASE3_INVENTORY_PASSWORD:-inventory_dev_only}
+      ECAL_BIND_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+    depends_on:
+      inventory-db: {condition: service_healthy}
+  payment:
+    <<: *app
+    build:
+      context: backend/distributed
+      args: {SERVICE: payment-service}
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://payment-db:5432/payment
+      ECAL_DB_USER: payment
+      ECAL_DB_PASSWORD: ${ECAL_PHASE3_PAYMENT_PASSWORD:-payment_dev_only}
+      ECAL_BIND_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+    depends_on:
+      payment-db: {condition: service_healthy}
+  api:
+    <<: *app
+    build:
+      context: backend/distributed
+      args: {SERVICE: orders-service}
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://orders-db:5432/orders
+      ECAL_DB_USER: orders
+      ECAL_DB_PASSWORD: ${ECAL_PHASE3_ORDERS_PASSWORD:-orders_dev_only}
+      ECAL_INVENTORY_URL: http://inventory:8080
+      ECAL_PAYMENT_URL: http://payment:8080
+      ECAL_BIND_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+    depends_on:
+      orders-db: {condition: service_healthy}
+      inventory: {condition: service_healthy}
+      payment: {condition: service_healthy}
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/local/web.Dockerfile
+      args: {VITE_ECAL_MODE: distributed}
+    ports: ["127.0.0.1:8091:8080"]
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      <<: *health
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1:8080/healthz"]
+volumes:
+  orders-data:
+  inventory-data:
+  payment-data:

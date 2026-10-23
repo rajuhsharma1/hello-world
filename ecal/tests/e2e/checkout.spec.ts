@@ -114,6 +114,10 @@ test("a committed checkout with a lost response survives reload and replays one 
 test("operator uploads real CSV, pages products, replays safely and filters history", async ({
   page,
 }) => {
+  test.skip(
+    process.env.ECAL_MODE === "distributed",
+    "CSV import is a Phase 2 local-transaction feature.",
+  );
   const { randomUUID } = await import("node:crypto");
   const rows = Array.from(
     { length: 25 },
@@ -168,4 +172,26 @@ test("operator uploads real CSV, pages products, replays safely and filters hist
   expect(
     (await page.request.get("/examples/catalog-import.csv")).status(),
   ).toBe(200);
+});
+
+test("Phase 3 exposes versioned reads and explains independent transaction boundaries", async ({
+  page,
+}) => {
+  test.skip(
+    process.env.ECAL_MODE !== "distributed",
+    "Only the distributed build has this boundary.",
+  );
+  await page.goto("/");
+  await expect(page.getByText("PHASE 03 · THREE SERVICES")).toBeVisible();
+  await expect(
+    page.getByText("Independent transaction boundaries"),
+  ).toBeVisible();
+  await expect(page.getByLabel("Catalog CSV")).toHaveCount(0);
+  const response = await page.request.get(
+    "/api/v1/catalog/products/page?limit=1",
+  );
+  expect(response.status()).toBe(200);
+  expect((await response.json()).items).toHaveLength(1);
+  expect(response.headers()["x-correlation-id"]).toMatch(/^[0-9a-f-]{36}$/);
+  expect(response.headers()["x-trace-id"]).toMatch(/^[0-9a-f]{32}$/);
 });

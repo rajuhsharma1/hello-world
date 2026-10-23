@@ -1,14 +1,33 @@
-# Enterprise Commerce Architecture Lab — Phase 2
+# Enterprise Commerce Architecture Lab — Phase 3
 
 A runnable architecture learning project: browse three products, submit a single-product order, simulate payment approval or decline, and reload persisted order status/history. It lives beside the existing Ark application; it does not replace or reuse that application's services, accounts or database.
 
-The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery extends Phase 0/1 with **Phase 2 database performance and bounded CSV imports**; distributed/cloud milestones remain future work.
+The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery includes Phase 2 database/import experiments and Phase 3 service extraction. Event-driven execution, authentication and cloud operations remain later milestones.
+
+## Start Phase 3: three services, one browser port
+
+Orders, Inventory and simulated Payment now have independent database ownership, versioned HTTP contracts, persisted workflow progress and identity-safe recovery after timeouts. The Phase 2 monolith remains runnable at 8090; the new stack uses 8091 with separate volumes. Fresh startup does not silently migrate old data.
+
+From your cloned repository root, with Docker Desktop running (PowerShell works; Make is not required):
+
+```powershell
+git fetch origin
+git switch feature/ecal-phase-3
+cd ecal
+docker compose -f compose.phase3.yaml up --build --wait --wait-timeout 180
+```
+
+Open **http://localhost:8091**. Read the [Phase 3 mentoring/IntelliJ guide](docs/learning/PHASE-03.md), [HLD](docs/architecture/PHASE-03-HLD.md), [LLD](docs/architecture/PHASE-03-LLD.md), [offline migration runbook](docs/runbooks/PHASE-03-MIGRATION.md) and [observed validation](VALIDATION.md). `python scripts/phase3_failure_lab.py` demonstrates a real payment-service outage and same-key recovery. Normal `docker compose -f compose.phase3.yaml down` preserves the three volumes.
+
+CSV import stays in the monolith: its original shared transaction cannot be transferred across HTTP unchanged. Phase 3 has no real payments, sign-in, autonomous background recovery, Kafka or cloud deployment. Those limitations and their reasons are explicit in the guide.
+
+## Preserved Phase 2 baseline
 
 ## What changed in Phase 2
 
 Cursor-paged catalog and filtered order history, explicit SQL read projections and indexes, bounded create-only CSV imports with per-batch rollback and safe replay, and a reproducible measured query experiment. Read the [Phase 2 mentoring guide](docs/learning/PHASE-02.md), [performance results](tests/performance/REPORT.md), and [observed validation](VALIDATION.md). The previous `feature/ecal-phase-1` branch remains the transactional baseline.
 
-## Start here
+## Run the Phase 2 monolith
 
 **Docker-only route — Windows, macOS and Linux:** install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with Compose v2 on Linux) and keep it running. Java, Maven, Node and Make are not required on your computer for this route.
 
@@ -175,7 +194,7 @@ Repeating that exact POST returns the original result with `200`; changing quant
 3. [Threat model and risk register](docs/requirements/THREATS_AND_RISKS.md)
 4. [HLD](docs/architecture/HLD.md) → [LLD](docs/architecture/LLD.md)
 5. [Architecture decisions](docs/DECISION_LOG.md) → [requirements-to-test traceability](docs/TRACEABILITY_MATRIX.md)
-6. [Phase 0 mentoring checkpoint](docs/learning/PHASE-00.md) → [Phase 1 walkthrough/exercises](docs/learning/PHASE-01.md) → [Phase 2 data/performance](docs/learning/PHASE-02.md)
+6. [Phase 0 mentoring checkpoint](docs/learning/PHASE-00.md) → [Phase 1 walkthrough/exercises](docs/learning/PHASE-01.md) → [Phase 2 data/performance](docs/learning/PHASE-02.md) → [Phase 3 extraction/recovery](docs/learning/PHASE-03.md)
 7. [Eight-phase roadmap](docs/architecture/ROADMAP.md) and [local runbook](docs/runbooks/LOCAL_DEVELOPMENT.md)
 
 ### Interview checkpoint
@@ -189,4 +208,4 @@ Exercise: run a decline, replay its key, then change its quantity. Predict order
 
 ## Next small milestone
 
-Phase 2 is implemented and measured. Next is Phase 3 service extraction: define per-service data ownership, contracts, failure recovery and migration/rollback before splitting the local checkout transaction. Keep the Phase 1 branch runnable for comparison.
+Phase 3 is implemented beside the preserved monolith. Next is Phase 4 event-driven workflow execution with an outbox/relay and consumer deduplication. Keep identities, compensation and unknown-outcome semantics intact while changing delivery/execution.

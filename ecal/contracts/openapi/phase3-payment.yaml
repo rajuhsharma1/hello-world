@@ -1,0 +1,146 @@
+openapi: 3.1.0
+info:
+  title: ECAL Payment simulator internal API
+  version: 1.0.0
+  description: No real money or credentials. One immutable outcome per orderId; amount/currency/outcome
+    conflicts never overwrite it. Repeating PUT reconciles unknown acknowledgements.
+    Decimal strings are preferred; numeric JSON literals are also accepted by BigDecimal
+    binding.
+paths:
+  /internal/v1/payments/{orderId}:
+    put:
+      operationId: authorize
+      parameters: &id001
+      - in: path
+        name: orderId
+        required: true
+        schema: &id002
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Command'
+      responses:
+        '200':
+          description: Existing or newly recorded deterministic authorization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Invalid exact amount, currency or simulator choice.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Identity already belongs to a different payment payload.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Outcome uncertain; retry same orderId and payload.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+    get:
+      operationId: readPayment
+      parameters: *id001
+      responses:
+        '200':
+          description: Durable outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          description: No recorded payment. Not proof an in-flight request cannot
+            commit later.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Read unavailable.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    Command:
+      type: object
+      required:
+      - amount
+      - currency
+      - outcome
+      properties:
+        amount:
+          oneOf:
+          - &id003
+            type: string
+            pattern: ^[0-9]+\.[0-9]{2}$
+          - type: number
+            minimum: 0.01
+            maximum: 999999999999.99
+            multipleOf: 0.01
+        currency:
+          type: string
+          const: INR
+        outcome:
+          type: string
+          enum:
+          - APPROVE
+          - DECLINE
+      additionalProperties: false
+    Payment:
+      type: object
+      required:
+      - orderId
+      - amount
+      - currency
+      - outcome
+      - status
+      properties:
+        orderId: *id002
+        amount: *id003
+        currency:
+          type: string
+          const: INR
+        outcome:
+          type: string
+          enum:
+          - APPROVE
+          - DECLINE
+        status:
+          type: string
+          enum:
+          - AUTHORIZED
+          - DECLINED
+    Problem:
+      type: object
+      required:
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid

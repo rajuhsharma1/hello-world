@@ -1,6 +1,6 @@
 # Delivery roadmap and review gates
 
-This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery includes Phase 2 database/read/import experiments. A reviewer has not yet approved every assumption.
+This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery includes Phase 3 extraction and durable synchronous recovery. A reviewer has not yet approved every assumption.
 
 | Phase | Small objective | Evidence to exit | Revisit / rollback point |
 |---|---|---|---|
@@ -15,7 +15,7 @@ This roadmap is a sequence of experiments, not a requirement to deploy every too
 
 ## Next recommended slice
 
-Phase 2 is implemented; see [its learning guide](../learning/PHASE-02.md) and [observed evidence](../../tests/performance/REPORT.md). Next, Phase 3 can extract a boundary while retaining the Phase 1 monolith baseline. Define ownership, timeout/retry contracts and recovery for partial failure before introducing cross-service writes. Redis remains deferred because the measured index solved the demonstrated read bottleneck.
+Phase 3 is implemented in a separate stack; see [its guide](../learning/PHASE-03.md), [migration ownership rules](../runbooks/PHASE-03-MIGRATION.md) and [validation](../../VALIDATION.md). Next, Phase 4 can add transactional outbox/relay, event transport, consumer deduplication, explicit background execution and an asynchronous reporting projection. The synchronous compensation already has Saga-like semantics; the next phase changes execution and delivery, not the need to reconcile unknown outcomes. Preserve the monolith and original business identities.
 
 ## Governance light enough to use
 

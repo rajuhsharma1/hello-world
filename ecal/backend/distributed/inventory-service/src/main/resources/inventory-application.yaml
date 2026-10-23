@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: ecal-inventory
+  datasource:
+    url: ${ECAL_DB_URL:jdbc:postgresql://127.0.0.1:5546/inventory}
+    username: ${ECAL_DB_USER:inventory}
+    password: ${ECAL_DB_PASSWORD:inventory_dev_only}
+    hikari:
+      maximum-pool-size: 12
+      connection-timeout: 2000
+  flyway:
+    locations: classpath:db/inventory
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  address: ${ECAL_BIND_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8093}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+logging:
+  structured:
+    format:
+      console: logstash

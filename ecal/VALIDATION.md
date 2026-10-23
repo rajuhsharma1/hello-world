@@ -1,8 +1,34 @@
-# Observed validation — Phase 2 (with retained Phase 1 baseline)
+# Observed validation — Phase 3 (with retained Phase 1/2 baselines)
 
-Validated on 22 October 2026 in the provided Linux cloud workspace. This records observations, not production readiness or achieved NFR/SLA targets.
+Latest Phase 3 validation: 23 October 2026 in the provided Linux cloud workspace. Earlier Phase 1/2 observations from 22 October are retained below. These are observations, not production readiness or achieved NFR/SLA targets.
 
-## Phase 2 observations
+## Phase 3 observations — 23 October 2026
+
+Same pinned Java 21/Spring Boot 4.1.1/PostgreSQL 17.6/Node 24 toolchain as the baseline; no unverified new framework version was introduced.
+
+| Check | Observed outcome | Practical limit |
+|---|---|---|
+| Distributed reactor `mvn verify` | **24 tests passed, none skipped**: 2 pure workflow-state, 1 cross-service architecture, 3 structural OpenAPI and 18 real HTTP/PostgreSQL integration tests | Test applications share one disposable PostgreSQL process with three isolated service databases plus a real-schema legacy fixture; Compose physical isolation is checked separately |
+| Service/effect boundaries | Three executable service artifacts, owner-specific migrations; architecture import guards and negative cross-owner DB connection test passed | Build uses a reactor/common HTTP support library; no domain entity/repository JAR is shared |
+| Partial failure/reconciliation | Reservation/payment/release committed-but-unacknowledged recovery, actual payment read timeout, malformed/additive response cases, declined release failure, local final-commit failure and Orders restart passed | Simulated payment only; no autonomous background worker or real-provider reconciliation claim |
+| Concurrency/state | Last-unit race, same-key race, changed downstream payload, release-before-reserve tombstone and stale-token fencing passed | Finite tested schedules, not an exactly-once transport or universal concurrency proof |
+| Public/versioned reads | Validation, server price, buyer-scoped status, tied-timestamp order pages, catalog continuation and mismatched filter cursor checks passed | No performance/throughput qualification for the distributed topology |
+| Offline migration | Actual Phase 2 Flyway schema exported; dry-run, partial-owner resume, receipt replay, full projected-row verification, checksum/drift rejection, quoted/multiline text safety and old-key replay passed | Isolated fixture only; no live monolith was migrated; no reverse backfill or host-loss restore qualification |
+| CLI source guard | Export while source web/API were running was refused and no snapshot file was created | Local stopped-container guard assumes no external SQL writer |
+| Correlation | Valid X-Correlation-ID/W3C trace identity and sampling flags propagated through both HTTP hops; UI support reference test passed | Correlated logs/context, not an OpenTelemetry exporter or tracing dashboard |
+| Frontend | **14 component tests passed**; default and distributed production builds/typechecks passed | Mocked HTTP at component tier; compiled distributed mode tested separately through Nginx |
+| Packaged distributed browser checks | **4 passed**, one monolith-only CSV case intentionally skipped: checkout/reload/decline, mobile/keyboard, lost browser-response replay, versioned API/three-service UI | Loopback Chromium and synthetic records; not comprehensive browser/accessibility certification |
+| Live container-outage drill | Payment container stopped; POST returned 503 with PAYMENT_UNKNOWN, held stock, no payment. Restored Payment; exact-key recovery/replay produced one order/reservation/payment and one decrement | Run with other clients idle; recovery record retained in ignored `.runtime/` |
+| Compose/runtime | All seven Phase 3 containers healthy; all three migrations applied, Nginx config passed; only loopback 8091 published and private service/DB host bindings absent | Three JVM/database overhead; environment limits are not production sizing |
+| Preserved monolith regression | **34 backend tests passed, none skipped**; **4 monolith browser checks passed**, with the Phase 3-only case intentionally skipped | The monolith's existing database/volume remained intact at 8090; independent stacks use independent synthetic datasets |
+| Docs/CI/config | HLD/LLD, four new ADRs, legacy-decision status updates, traceability, Windows/IntelliJ/migration guides, three versioned contracts and CI job updated; local links/YAML/Compose configs checked | Hosted CI outcome is not claimed from local runs |
+
+The first fault test hit Inventory's cold classloading deadline before its intended Payment fault. A separate bounded same-key warm-up now ensures each fault reaches its intended dependency; actual read-timeout recovery remains tested explicitly. Resource-heavy image builds exhausted this workspace disk during initial database initialization. Unused build artifacts were cleared without deleting application data volumes, then initialization/startup completed. Neither incident is represented as a successful check before rerun.
+
+[Phase 3 guide](docs/learning/PHASE-03.md), [HLD](docs/architecture/PHASE-03-HLD.md), [LLD](docs/architecture/PHASE-03-LLD.md), [migration ownership rules](docs/runbooks/PHASE-03-MIGRATION.md) and executable tests describe reproducible proof. Phase 3 has no public deployment, real payment/email, authentication, Kafka/outbox/relay, autonomous event execution, asynchronous reporting projection, cache or exported distributed traces. Phase 2 performance results are **not** promoted to a distributed latency/capacity claim. Ark services/data were preserved.
+
+## Retained Phase 2 observations
+
 
 All observations below were collected on 22 October 2026 in this workspace; hosted CI and production capacity are not implied.
 

@@ -1,6 +1,6 @@
 # ADR-008: One database now, explicit ownership after extraction
 
-**Status:** Accepted locally; extraction policy deferred to Phase 3
+**Status:** Accepted monolith baseline; Phase 3 ownership and migration are implemented by ADR-017/020. The original baseline rationale below is retained.
 
 ## Context
 

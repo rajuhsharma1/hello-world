@@ -1,6 +1,6 @@
 # ADR-006: Explicit orchestration after transactional boundaries split
 
-**Status:** Deferred — Phase 4 design candidate
+**Status:** Partially superseded by ADR-018: Phase 3 implements durable synchronous compensation. Event-driven execution/outbox and autonomous recovery remain Phase 4. The original proposal below describes the earlier baseline.
 
 ## Context
 

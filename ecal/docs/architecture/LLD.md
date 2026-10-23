@@ -173,3 +173,7 @@ Four worker threads plus a sixteen-element queue bound submitted batches; the ma
 V4 adds the selective covering order index and catalog tuple index; V5 stores import identities. Both are additive Flyway migrations. The [Phase 2 guide](../learning/PHASE-02.md) covers JPA alternatives, N+1, isolation, failure cases and interview exercises; [OpenAPI](../../contracts/openapi/commerce.yaml) defines page and multipart/result contracts.
 
 Infrastructure exceptions can occur around commit, so such batches report `UNKNOWN`, not a promise of rollback. `failedBatches` counts both ROLLED_BACK and UNKNOWN; created/skipped counts include only acknowledged committed batches. Replay the same file to resolve uncertainty. A unit test injects a connection-loss exception to guard this distinction.
+
+## Separate Phase 3 implementation
+
+This file describes the runnable monolith. [Phase 3 LLD](PHASE-03-LLD.md) documents its separate service code, owned schemas, versioned contracts, durable states, token-fenced recovery and migration semantics. Do not apply the monolith's global rollback claim to the distributed mode.

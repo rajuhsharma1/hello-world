@@ -1,6 +1,6 @@
 # ADR-001: Modular monolith before microservices
 
-**Status:** Accepted — current Phase 1
+**Status:** Accepted monolith baseline; Phase 3 uses the separate extraction experiment in ADR-017.
 
 ## Context
 

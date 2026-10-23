@@ -1,0 +1,8 @@
+# Database-only host development; do not run Docker API/web alongside IDE applications.
+services:
+  orders-db:
+    ports: ["127.0.0.1:5545:5432"]
+  inventory-db:
+    ports: ["127.0.0.1:5546:5432"]
+  payment-db:
+    ports: ["127.0.0.1:5547:5432"]

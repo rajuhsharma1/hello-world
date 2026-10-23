@@ -9,6 +9,7 @@ import { OrderHistory } from "./components/OrderHistory";
 
 /** Owns one buyer journey; server data and transient form state do not yet warrant a global store. */
 export default function App() {
+  const distributed = import.meta.env.VITE_ECAL_MODE === "distributed";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState("");
@@ -129,7 +130,10 @@ export default function App() {
         );
       } else {
         setCheckoutError(
-          "We could not verify the checkout outcome. Retry the same checkout safely; it may already have committed.",
+          "We could not verify the checkout outcome. Retry the same checkout safely; it may already have committed." +
+            (error instanceof ApiError && error.correlationId
+              ? " Support reference: " + error.correlationId
+              : ""),
         );
       }
     } finally {
@@ -166,7 +170,8 @@ export default function App() {
           <a href="#orders">Order history</a>
         </nav>
         <span className="phase-label">
-          <span /> PHASE 02 · LOCAL LAB
+          <span />{" "}
+          {distributed ? "PHASE 03 · THREE SERVICES" : "PHASE 02 · LOCAL LAB"}
         </span>
       </header>
       <main id="main">
@@ -178,8 +183,9 @@ export default function App() {
               <br />a story behind it.
             </h1>
             <p className="hero-description">
-              Explore a commerce flow where inventory, payment simulation and
-              order state agree—in one local transaction.
+              {distributed
+                ? "Explore a checkout across Orders, Inventory and Payments, with durable progress and recovery across independent databases."
+                : "Explore a commerce flow where inventory, payment simulation and order state agree—in one local transaction."}
             </p>
             <a className="primary-link" href="#catalog">
               Explore the catalog <span aria-hidden="true">→</span>
@@ -190,7 +196,8 @@ export default function App() {
             aria-label="Checkout transaction overview"
           >
             <div className="architecture-heading">
-              <span className="status-dot" /> MODULAR MONOLITH
+              <span className="status-dot" />{" "}
+              {distributed ? "DISTRIBUTED CHECKOUT" : "MODULAR MONOLITH"}
             </div>
             <ol>
               <li>
@@ -218,12 +225,24 @@ export default function App() {
                 <span>04</span>
                 <div>
                   <strong>Persist the outcome</strong>
-                  <small>One transaction, a durable order</small>
+                  <small>
+                    {distributed
+                      ? "Local commits, recoverable progress"
+                      : "One transaction, a durable order"}
+                  </small>
                 </div>
               </li>
             </ol>
             <div className="transaction-caption">
-              ONE PROCESS <span>·</span> ONE POSTGRESQL DATABASE
+              {distributed ? (
+                <>
+                  THREE SERVICES <span>·</span> THREE DATABASES
+                </>
+              ) : (
+                <>
+                  ONE PROCESS <span>·</span> ONE POSTGRESQL DATABASE
+                </>
+              )}
             </div>
           </aside>
         </section>
@@ -320,16 +339,20 @@ export default function App() {
               do the work.
             </h2>
             <p>
-              Try an approved payment, then a declined one. A decline cancels
-              the order and returns its stock. Replay an uncertain request with
-              the same key to avoid a duplicate effect.
+              {distributed
+                ? "Try approval and decline across three services. A decline is only shown as cancelled after stock release is acknowledged. A timeout keeps durable progress; replay the same checkout to resume without another stock or payment effect."
+                : "Try an approved payment, then a declined one. A decline cancels the order and returns its stock. Replay an uncertain request with the same key to avoid a duplicate effect."}
             </p>
             <div className="boundary-note">
-              <strong>The transaction boundary</strong>
+              <strong>
+                {distributed
+                  ? "Independent transaction boundaries"
+                  : "The transaction boundary"}
+              </strong>
               <p>
-                Order + inventory + simulated payment + notification record. No
-                network payment call or Kafka publish is hidden inside this
-                transaction.
+                {distributed
+                  ? "Orders records intent, Inventory owns reservations, and Payments records an idempotent simulation. Each owns a private database. HTTP timeouts leave recoverable state; no cross-service ACID transaction is claimed."
+                  : "Order + inventory + simulated payment + notification record. No network payment call or Kafka publish is hidden inside this transaction."}
               </p>
             </div>
           </div>
@@ -453,7 +476,9 @@ export default function App() {
           onRefresh={() => void loadOrders()}
           onView={(id) => void viewOrder(id)}
         />
-        <CatalogImport onImported={() => void loadCatalog()} />
+        {!distributed && (
+          <CatalogImport onImported={() => void loadCatalog()} />
+        )}
       </main>
       <footer>
         <a className="brand footer-brand" href="#main">
@@ -463,7 +488,9 @@ export default function App() {
           </span>
         </a>
         <p>
-          Phase 2 · bounded imports and indexed read paths.
+          {distributed
+            ? "Phase 3 · independent services and durable recovery."
+            : "Phase 2 · bounded imports and indexed read paths."}
           <br />
           Architecture is a set of decisions you can explain and prove.
         </p>
