@@ -37,7 +37,9 @@ const json = (value: unknown, status = 200) =>
   });
 let orders: Order[];
 let post: (init: RequestInit) => Promise<Response>;
-let fetchMock: ReturnType<typeof vi.fn>;
+let fetchMock: ReturnType<
+  typeof vi.fn<(url: string, init: RequestInit) => Promise<Response>>
+>;
 beforeEach(() => {
   orders = [];
   post = async () => {
@@ -219,9 +221,9 @@ describe("Phase 2 read and import controls", () => {
   it("navigates catalog cursors and resets after refresh", async () => {
     const original = fetchMock.getMockImplementation() as (
       url: string,
-      init?: RequestInit,
+      init: RequestInit,
     ) => Promise<Response>;
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+    fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
       if (url.startsWith("/api/catalog/products/page"))
         return url.includes("cursor=")
           ? json({
@@ -274,9 +276,9 @@ describe("Phase 2 read and import controls", () => {
   it("shows partial import outcomes and a safe replay instruction", async () => {
     const original = fetchMock.getMockImplementation() as (
       url: string,
-      init?: RequestInit,
+      init: RequestInit,
     ) => Promise<Response>;
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+    fetchMock.mockImplementation(async (url: string, init: RequestInit) =>
       url === "/api/catalog/import"
         ? json({
             totalRows: 51,
@@ -340,9 +342,9 @@ describe("Phase 3 distributed mode", () => {
     orders = [paused as Order];
     const original = fetchMock.getMockImplementation() as (
       url: string,
-      init?: RequestInit,
+      init: RequestInit,
     ) => Promise<Response>;
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) =>
+    fetchMock.mockImplementation(async (url: string, init: RequestInit) =>
       url === "/api/orders/" + confirmed.id
         ? json(paused)
         : original(url, init),
@@ -386,4 +388,90 @@ describe("Phase 3 distributed mode", () => {
       screen.getByRole("button", { name: /Retry same checkout/ }),
     ).toBeEnabled();
   });
+});
+
+describe("event-driven acceptance", () => {
+  it("keeps the key after 202 and polls the accepted order to terminal acknowledgement", async () => {
+    vi.stubEnv("VITE_ECAL_MODE", "events");
+    post = async () =>
+      json({ ...confirmed, status: "PENDING", paymentStatus: null }, 202);
+    try {
+      const user = await choose();
+      await user.click(
+        screen.getByRole("button", { name: /Place simulated order/ }),
+      );
+      await screen.findByRole("heading", {
+        name: "Order is awaiting recovery.",
+      });
+      expect(sessionStorage.getItem("ecal.pendingCheckout.v1")).not.toBeNull();
+      expect(
+        screen.getByRole("button", { name: /Accepted · waiting/ }),
+      ).toBeDisabled();
+      await screen.findByRole(
+        "heading",
+        { name: "Your order is confirmed." },
+        { timeout: 4000 },
+      );
+      await waitFor(() =>
+        expect(sessionStorage.getItem("ecal.pendingCheckout.v1")).toBeNull(),
+      );
+      expect(
+        fetchMock.mock.calls.filter(([, init]) => init?.method === "POST"),
+      ).toHaveLength(1);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+  it.each(["read outage", "mismatched snapshot"])(
+    "retains its key during %s after acceptance",
+    async (failure) => {
+      vi.stubEnv("VITE_ECAL_MODE", "events");
+      post = async () =>
+        json(
+          { ...confirmed, status: "PAYMENT_UNKNOWN", paymentStatus: null },
+          202,
+        );
+      const original = fetchMock.getMockImplementation()!;
+      fetchMock.mockImplementation(
+        async (url: string, init: RequestInit = {}) => {
+          if (url === `/api/orders/${confirmed.id}`) {
+            if (failure === "read outage") throw new TypeError("Read outage");
+            return json({
+              ...confirmed,
+              productId: "99999999-9999-9999-9999-999999999999",
+            });
+          }
+          return original(url, init);
+        },
+      );
+      try {
+        const user = await choose();
+        await user.click(
+          screen.getByRole("button", { name: /Place simulated order/ }),
+        );
+        await screen.findByRole("heading", {
+          name: "Order is awaiting recovery.",
+        });
+        await waitFor(
+          () =>
+            expect(
+              fetchMock.mock.calls.some(
+                ([url]) => url === `/api/orders/${confirmed.id}`,
+              ),
+            ).toBe(true),
+          { timeout: 4000 },
+        );
+        expect(
+          sessionStorage.getItem("ecal.pendingCheckout.v1"),
+        ).not.toBeNull();
+        expect(
+          screen.queryByRole("heading", {
+            name: "Payment declined. Stock released.",
+          }),
+        ).not.toBeInTheDocument();
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    },
+  );
 });

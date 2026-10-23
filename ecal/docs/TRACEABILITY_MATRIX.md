@@ -72,3 +72,15 @@ These are Phase 2 learning extensions, not newly attributed employer business re
 | Real outage and caller recovery | ADR-018/019 | phase3_failure_lab.py | Payment container stop/start, persisted unknown state, same-key replay, private DB effect counts |
 
 In distributed mode, an insufficient-stock attempt is a persisted REJECTED order, unlike FR-08's rolled-back monolith claim. This semantic change is explicit in ADR-018 and the Phase 3 contract. Phase 2 CSV remains monolith-only; no cross-database atomic import is claimed. Phase 3's synchronous read projection is not an asynchronous CQRS store. Observed outcomes belong in `ecal/VALIDATION.md`.
+
+## Phase 4 additions
+
+| Goal | Decision/code | Proof |
+|---|---|---|
+| Business commit and event cannot diverge | ADR 021; V2 outbox + owner V3 after-triggers | EventWorkflowIT outbox rollback and duplicate POST/event checks |
+| Broker delivery survives crash | EventPlatform.Relay + persisted publish marker | actual Kafka relay-ack crash and broker pause/recovery |
+| Consumers tolerate re-delivery | EventInbox local transaction + manual ack | commit-before-ack injection and duplicate Kafka publication |
+| Autonomous execution and compensation | AsyncSaga durable work + Checkout fenced HTTP coordinator | payment outage, Orders restart; no client replay |
+| Poison and incompatible schemas remain inspectable | EventInbox quarantine | malformed/schema tests followed by successful next record |
+| Eventual reporting cannot regress | Reports snapshot version CAS + separate credentials | newer-then-older test, negative DB access, live UI/report checks |
+| UI distinguishes acceptance from completion | events mode, validated polling and retained operation key | React acceptance/read-outage tests and Phase 4 browser journey |

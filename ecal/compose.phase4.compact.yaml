@@ -1,0 +1,40 @@
+# Optional resource-saving topology. Compose 2.24.4+ supports !override.
+# This uses a distinct compact-data volume, never the four-instance data volumes.
+services:
+  orders-db:
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ecal_bootstrap
+      POSTGRES_PASSWORD: ${ECAL_PHASE4_BOOTSTRAP_PASSWORD:-bootstrap_dev_only}
+      ORDERS_PASSWORD: ${ECAL_PHASE4_ORDERS_PASSWORD:-orders_dev_only}
+      INVENTORY_PASSWORD: ${ECAL_PHASE4_INVENTORY_PASSWORD:-inventory_dev_only}
+      PAYMENT_PASSWORD: ${ECAL_PHASE4_PAYMENT_PASSWORD:-payment_dev_only}
+      REPORTING_PASSWORD: ${ECAL_PHASE4_REPORTING_PASSWORD:-reporting_dev_only}
+    volumes: !override
+      - compact-data:/var/lib/postgresql/data
+      - ./infrastructure/local/phase4/compact-init.sh:/docker-entrypoint-initdb.d/01-owners.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U ecal_bootstrap -d postgres"]
+  inventory-db:
+    profiles: [separate-databases]
+  payment-db:
+    profiles: [separate-databases]
+  reporting-db:
+    profiles: [separate-databases]
+  inventory:
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://orders-db:5432/inventory
+    depends_on: !override
+      orders-db: {condition: service_healthy}
+  payment:
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://orders-db:5432/payment
+    depends_on: !override
+      orders-db: {condition: service_healthy}
+  reporting:
+    environment:
+      ECAL_DB_URL: jdbc:postgresql://orders-db:5432/reporting
+    depends_on: !override
+      orders-db: {condition: service_healthy}
+volumes:
+  compact-data:

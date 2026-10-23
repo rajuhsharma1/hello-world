@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: ecal-reporting
+  config:
+    import: classpath:events.yaml
+  datasource:
+    url: ${ECAL_DB_URL:jdbc:postgresql://127.0.0.1:5548/reporting}
+    username: ${ECAL_DB_USER:reporting}
+    password: ${ECAL_DB_PASSWORD:reporting_dev_only}
+    hikari:
+      maximum-pool-size: 6
+      connection-timeout: 2000
+  flyway:
+    locations: classpath:db/reporting,classpath:db/events
+server:
+  address: ${ECAL_BIND_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8096}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+logging:
+  structured:
+    format:
+      console: logstash

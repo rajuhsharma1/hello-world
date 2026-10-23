@@ -36,3 +36,7 @@ Ask for requirement, options, failure mode and evidence before accepting a techn
 Phase 2 accepted decisions: [ADR-015 keyset read models](adr/ADR-015-keyset-read-model.md), [ADR-016 bounded import](adr/ADR-016-bounded-import.md). [ADR-010](adr/ADR-010-cache.md) now records the measured reason to continue without an application cache.
 
 Phase 3 accepted decisions: [ADR-017 service extraction](adr/ADR-017-service-extraction.md), [ADR-018 durable HTTP workflow](adr/ADR-018-durable-http-workflow.md), [ADR-019 bounded HTTP and correlation](adr/ADR-019-http-observability.md), [ADR-020 offline ownership cutover](adr/ADR-020-offline-ownership-cutover.md). ADR-001/008 remain baseline rationale; ADR-006 is explicitly superseded for synchronous compensation, with event execution still deferred.
+
+## Phase 4 — 23 October 2026
+
+[ADR 021](adr/ADR-021-event-driven-execution.md) adopts a transactional outbox, Kafka activation, durable Saga work, consumer inbox/quarantine and a separate snapshot projection. HTTP remains the command transport to limit protocol changes. Single-broker persistence is a development boundary; no global exactly-once or replicated-durability claim is made. [HLD](architecture/PHASE-04-HLD.md) and [LLD](architecture/PHASE-04-LLD.md) record ownership and failure semantics.

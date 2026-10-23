@@ -1,8 +1,23 @@
-# Enterprise Commerce Architecture Lab — Phase 3
+# Enterprise Commerce Architecture Lab — Phase 4
 
 A runnable architecture learning project: browse three products, submit a single-product order, simulate payment approval or decline, and reload persisted order status/history. It lives beside the existing Ark application; it does not replace or reuse that application's services, accounts or database.
 
-The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery includes Phase 2 database/import experiments and Phase 3 service extraction. Event-driven execution, authentication and cloud operations remain later milestones.
+The supplied **Bebo Codex Master Prompt** and **Architecture Interview Blueprint** are reference material. The commerce domain and stack are proposed learning exercises, not requirements attributed to the employer. This delivery includes Phase 2 database/import experiments, Phase 3 service extraction and Phase 4 durable events, autonomous execution and asynchronous reporting. Authentication and cloud operations remain later milestones.
+
+## Start Phase 4: Kafka, durable Saga and asynchronous reporting
+
+With Docker Desktop running, from the cloned repository root in PowerShell:
+
+```powershell
+git fetch origin
+git switch feature/ecal-phase-4
+cd ecal
+docker compose -f compose.phase4.yaml up --build --wait --wait-timeout 240
+```
+
+Open **http://localhost:8095**. An order is accepted durably, completed by a background worker, and projected into the reporting database. Inventory and Payment commands use the existing idempotent HTTP contracts; Kafka carries activation and outcome facts. The UI labels pending status and reporting delay explicitly. This stack uses fresh isolated volumes; Phase 3 data is preserved separately. For limited resources, add `-f compose.phase4.compact.yaml` after the first `-f` argument; it retains four database owners in one PostgreSQL instance. Use that file selection consistently, as explained in the guide.
+
+Read the [step-by-step Windows/IntelliJ and failure guide](docs/learning/PHASE-04.md), [HLD](docs/architecture/PHASE-04-HLD.md), [LLD](docs/architecture/PHASE-04-LLD.md), [event contracts](contracts/events/README.md), [ADR 021](docs/adr/ADR-021-event-driven-execution.md) and [validation](VALIDATION.md). Stop using `docker compose -f compose.phase4.yaml down`; no `-v`, so data is retained. This remains a local learning app with simulated payments and a shared buyer.
 
 ## Start Phase 3: three services, one browser port
 

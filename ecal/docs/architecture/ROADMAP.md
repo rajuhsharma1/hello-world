@@ -1,6 +1,6 @@
 # Delivery roadmap and review gates
 
-This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery includes Phase 3 extraction and durable synchronous recovery. A reviewer has not yet approved every assumption.
+This roadmap is a sequence of experiments, not a requirement to deploy every tool. Phase 0 documents are a reviewable draft; the current delivery includes Phase 4 events, autonomous Saga execution and asynchronous reporting. A reviewer has not yet approved every assumption.
 
 | Phase | Small objective | Evidence to exit | Revisit / rollback point |
 |---|---|---|---|
@@ -15,7 +15,7 @@ This roadmap is a sequence of experiments, not a requirement to deploy every too
 
 ## Next recommended slice
 
-Phase 3 is implemented in a separate stack; see [its guide](../learning/PHASE-03.md), [migration ownership rules](../runbooks/PHASE-03-MIGRATION.md) and [validation](../../VALIDATION.md). Next, Phase 4 can add transactional outbox/relay, event transport, consumer deduplication, explicit background execution and an asynchronous reporting projection. The synchronous compensation already has Saga-like semantics; the next phase changes execution and delivery, not the need to reconcile unknown outcomes. Preserve the monolith and original business identities.
+Phase 4 is implemented in its own stack; see [its guide](../learning/PHASE-04.md), [HLD](PHASE-04-HLD.md), [LLD](PHASE-04-LLD.md) and [validation](../../VALIDATION.md). Commands remain HTTP; Kafka drives activation and asynchronous projection. Next, Phase 5 should add authenticated buyer/admin identities, object-level authorization and secure sessions, preserving server-owned prices and immutable operation identities. This app is still loopback-only. Multi-broker durability, archival/replay tooling and production capacity require further operational work; the Phase 4 delivery does not imply those are solved.
 
 ## Governance light enough to use
 

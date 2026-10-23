@@ -1,0 +1,83 @@
+openapi: 3.1.0
+info:
+  title: ECAL Phase 4 asynchronous order and reporting API
+  version: 1.0.0
+  description: >-
+    Phase 4 changes checkout acknowledgement to durable acceptance. Other Orders
+    routes and schemas remain in phase3-orders.yaml. Reporting is a separate owner
+    proxied through the same browser origin. These local routes have no authentication.
+servers:
+  - url: http://localhost:8095
+paths:
+  /api/v1/orders:
+    post:
+      operationId: acceptCheckout
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [productId, quantity, paymentOutcome]
+              properties:
+                productId: {type: string, format: uuid}
+                quantity: {type: integer, minimum: 1, maximum: 10}
+                paymentOutcome: {type: string, enum: [APPROVE, DECLINE]}
+      responses:
+        '202':
+          description: Order and creation event committed; no terminal business outcome promised.
+          headers:
+            Location: {schema: {type: string}, description: Read-only order status URL.}
+          content:
+            application/json:
+              schema: {$ref: 'phase3-orders.yaml#/components/schemas/Order'}
+        '200':
+          description: Existing terminal order for the same immutable operation, including REJECTED.
+          content:
+            application/json:
+              schema: {$ref: 'phase3-orders.yaml#/components/schemas/Order'}
+        '400': {description: Invalid request or key.}
+        '404': {description: Product not found.}
+        '409': {description: Same key with a changed payload.}
+        '503': {description: Acceptance unavailable; retain and replay the original key.}
+  /api/v1/reports/summary:
+    get:
+      operationId: reportSummary
+      responses:
+        '200':
+          description: Eventual snapshot; last projection time does not measure broker offset lag.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [consistency, observedAt, lastProjectedAt, totals, monthlyRevenue, quarantinedEvents, freshnessNote]
+                properties:
+                  consistency: {type: string, const: EVENTUAL}
+                  observedAt: {type: string, format: date-time}
+                  lastProjectedAt: {type: [string, 'null']}
+                  quarantinedEvents: {type: integer, minimum: 0}
+                  freshnessNote: {type: string}
+                  totals:
+                    type: array
+                    items:
+                      type: object
+                      required: [status, orders, amount]
+                      properties:
+                        status: {type: string}
+                        orders: {type: integer, minimum: 0}
+                        amount: {type: string, description: Exact sum of order amounts in this status, not necessarily revenue.}
+                  monthlyRevenue:
+                    type: array
+                    maxItems: 24
+                    items:
+                      type: object
+                      required: [month, revenue]
+                      properties:
+                        month: {type: string, pattern: '^\d{4}-\d{2}$'}
+                        revenue: {type: string, description: Confirmed orders only, creation month in India.}

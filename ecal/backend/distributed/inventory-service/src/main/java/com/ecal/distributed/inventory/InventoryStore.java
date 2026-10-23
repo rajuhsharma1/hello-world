@@ -49,6 +49,7 @@ public class InventoryStore {
 
   @Transactional(timeout = 5, isolation = Isolation.READ_COMMITTED)
   public Reservation reserve(UUID order, UUID product, int quantity) {
+    com.ecal.distributed.support.EventContext.attach(db);
     if (
       db.queryForObject(
         "select count(*) from stock where product_id=?",
@@ -84,6 +85,7 @@ public class InventoryStore {
 
   @Transactional(timeout = 5, isolation = Isolation.READ_COMMITTED)
   public Reservation release(UUID order, UUID product, int quantity) {
+    com.ecal.distributed.support.EventContext.attach(db);
     int inserted = db.update(
       "insert into reservation(order_id,product_id,quantity,state) values (?,?,?,'RELEASED') on conflict(order_id) do nothing",
       order,

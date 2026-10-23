@@ -31,6 +31,7 @@ public class PaymentStore {
     String currency,
     String outcome
   ) {
+    com.ecal.distributed.support.EventContext.attach(db);
     var exact = amount.setScale(2, java.math.RoundingMode.UNNECESSARY);
     if (
       exact.signum() <= 0 ||

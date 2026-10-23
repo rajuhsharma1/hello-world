@@ -1,5 +1,7 @@
 # The Ark Salon & Spa · Spa management
 
+For the ECAL commerce architecture lab, including Phase 4 Kafka workflows and reporting, see the [ECAL README](ecal/README.md) and [step-by-step Phase 4 guide](ecal/docs/learning/PHASE-04.md).
+
 A spa management backend and responsive browser UI. Java 21 / Spring Boot services, PostgreSQL, Kafka, and observability run behind one gateway.
 
 ## Run locally

@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class OrdersController {
 
+  @org.springframework.beans.factory.annotation.Value(
+    "${ecal.events-enabled:false}"
+  )
+  private boolean eventsEnabled;
+
   private final Checkout checkout;
   private final OrderStore store;
   private final RemoteServices services;
@@ -44,6 +49,19 @@ public class OrdersController {
     @RequestHeader("Idempotency-Key") UUID key,
     @Valid @RequestBody Command c
   ) {
+    if (eventsEnabled) {
+      var claim = store.claim(
+        key,
+        new OrderStore.Command(c.productId(), c.quantity(), c.paymentOutcome())
+      );
+      var view = claim.stored().view();
+      boolean terminal = Set.of("CONFIRMED", "CANCELLED", "REJECTED").contains(
+        view.status()
+      );
+      return ResponseEntity.status(terminal ? 200 : 202)
+        .location(java.net.URI.create("/api/v1/orders/" + view.id()))
+        .body(view);
+    }
     var result = checkout.checkout(
       key,
       new OrderStore.Command(c.productId(), c.quantity(), c.paymentOutcome())

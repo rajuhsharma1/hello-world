@@ -1,6 +1,6 @@
 # ADR-006: Explicit orchestration after transactional boundaries split
 
-**Status:** Partially superseded by ADR-018: Phase 3 implements durable synchronous compensation. Event-driven execution/outbox and autonomous recovery remain Phase 4. The original proposal below describes the earlier baseline.
+**Status:** Phase 3 synchronous orchestration is implemented under ADR-018; Phase 4 autonomous execution and delivery are implemented under [ADR-021](ADR-021-event-driven-execution.md). The original proposal below is retained.
 
 ## Context
 

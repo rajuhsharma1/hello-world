@@ -1,6 +1,6 @@
 # ADR-005: Outbox when a durable external event is introduced
 
-**Status:** Deferred — Phase 4 design candidate
+**Status:** Superseded for Phase 4 by [ADR-021](ADR-021-event-driven-execution.md): outboxes and relays are implemented. The original Phase 1 decision below is retained.
 
 ## Context
 

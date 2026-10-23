@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Import;
 
 /** Independently deployable owner of the orders database; no other service's packages are scanned. */
 @SpringBootApplication
-@Import({ Problems.class, RequestContext.class })
+@Import({ Problems.class, RequestContext.class, EventPlatform.class })
 public class OrdersApplication {
 
   public static void main(String[] args) {

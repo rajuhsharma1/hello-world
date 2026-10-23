@@ -1,6 +1,6 @@
 # ADR-007: Kafka as a later replay/streaming experiment
 
-**Status:** Deferred — Phase 4 option, not installed
+**Status:** Superseded for Phase 4 by [ADR-021](ADR-021-event-driven-execution.md): Kafka activation and reporting are implemented. The original deferral below is retained.
 
 ## Context
 

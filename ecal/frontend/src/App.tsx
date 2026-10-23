@@ -1,15 +1,24 @@
 import { useEffect, useState, useRef } from "react";
-import { api, ApiError, restorePending, savePending } from "./api";
+import {
+  api,
+  ApiError,
+  restorePending,
+  savePending,
+  terminalOrder,
+} from "./api";
 import type { Order, PendingCheckout, Product } from "./api";
 import { money } from "./format";
 import { ProductCard } from "./components/ProductCard";
 import { OrderResult } from "./components/OrderResult";
 import { CatalogImport } from "./components/CatalogImport";
+import { Reporting } from "./components/Reporting";
 import { OrderHistory } from "./components/OrderHistory";
 
 /** Owns one buyer journey; server data and transient form state do not yet warrant a global store. */
 export default function App() {
-  const distributed = import.meta.env.VITE_ECAL_MODE === "distributed";
+  const events = import.meta.env.VITE_ECAL_MODE === "events";
+  const distributed =
+    events || import.meta.env.VITE_ECAL_MODE === "distributed";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState("");
@@ -25,6 +34,7 @@ export default function App() {
   const [checkoutError, setCheckoutError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recovered, setRecovered] = useState(false);
+  const [acceptedId, setAcceptedId] = useState<string | null>(null);
 
   const [catalogCursors, setCatalogCursors] = useState<(string | null)[]>([
     null,
@@ -115,8 +125,13 @@ export default function App() {
       const order = await api.checkout(operation);
       setResult(order);
       setRecovered(Boolean(pending));
-      savePending(null);
-      setPending(null);
+      if (events && !terminalOrder(order)) {
+        setAcceptedId(order.id);
+      } else {
+        savePending(null);
+        setPending(null);
+        setAcceptedId(null);
+      }
       await Promise.all([loadCatalog(), loadOrders()]);
     } catch (error) {
       if (error instanceof ApiError && error.isTerminal) {
@@ -140,6 +155,33 @@ export default function App() {
       setBusy(false);
     }
   }
+
+  // Poll only acknowledged order IDs. A lost POST response still needs its original key on replay.
+  useEffect(() => {
+    if (!events || !acceptedId || !pending) return;
+    let active = true;
+    const timer = window.setInterval(() => {
+      void api
+        .observe(acceptedId, pending)
+        .then((order) => {
+          if (!active) return;
+          setResult(order);
+          if (terminalOrder(order)) {
+            savePending(null);
+            setPending(null);
+            setAcceptedId(null);
+            void Promise.all([loadCatalog(), loadOrders()]);
+          }
+        })
+        .catch(() => {
+          /* Keep the durable identity during a read outage. */
+        });
+    }, 1500);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [events, acceptedId, pending]);
 
   async function viewOrder(id: string) {
     try {
@@ -171,7 +213,11 @@ export default function App() {
         </nav>
         <span className="phase-label">
           <span />{" "}
-          {distributed ? "PHASE 03 · THREE SERVICES" : "PHASE 02 · LOCAL LAB"}
+          {events
+            ? "PHASE 04 · EVENT-DRIVEN"
+            : distributed
+              ? "PHASE 03 · THREE SERVICES"
+              : "PHASE 02 · LOCAL LAB"}
         </span>
       </header>
       <main id="main">
@@ -197,7 +243,11 @@ export default function App() {
           >
             <div className="architecture-heading">
               <span className="status-dot" />{" "}
-              {distributed ? "DISTRIBUTED CHECKOUT" : "MODULAR MONOLITH"}
+              {events
+                ? "KAFKA + DURABLE SAGA"
+                : distributed
+                  ? "DISTRIBUTED CHECKOUT"
+                  : "MODULAR MONOLITH"}
             </div>
             <ol>
               <li>
@@ -236,7 +286,9 @@ export default function App() {
             <div className="transaction-caption">
               {distributed ? (
                 <>
-                  THREE SERVICES <span>·</span> THREE DATABASES
+                  {events
+                    ? "FOUR SERVICES · FOUR DATABASES · KAFKA"
+                    : "THREE SERVICES · THREE DATABASES"}
                 </>
               ) : (
                 <>
@@ -339,9 +391,11 @@ export default function App() {
               do the work.
             </h2>
             <p>
-              {distributed
-                ? "Try approval and decline across three services. A decline is only shown as cancelled after stock release is acknowledged. A timeout keeps durable progress; replay the same checkout to resume without another stock or payment effect."
-                : "Try an approved payment, then a declined one. A decline cancels the order and returns its stock. Replay an uncertain request with the same key to avoid a duplicate effect."}
+              {events
+                ? "Orders are accepted durably, then completed in the background. Kafka starts a recoverable Saga; reporting follows asynchronously. You can close the browser after acceptance. Refresh history to see completion."
+                : distributed
+                  ? "Try approval and decline across three services. A decline is only shown as cancelled after stock release is acknowledged. A timeout keeps durable progress; replay the same checkout to resume without another stock or payment effect."
+                  : "Try an approved payment, then a declined one. A decline cancels the order and returns its stock. Replay an uncertain request with the same key to avoid a duplicate effect."}
             </p>
             <div className="boundary-note">
               <strong>
@@ -428,19 +482,22 @@ export default function App() {
               <button
                 className="primary-button"
                 type="submit"
-                disabled={busy || (!product && !pending)}
+                disabled={busy || Boolean(acceptedId) || (!product && !pending)}
               >
-                {busy
-                  ? "Processing checkout…"
-                  : pending
-                    ? "Retry same checkout"
-                    : "Place simulated order"}
+                {acceptedId
+                  ? "Accepted · waiting for background completion"
+                  : busy
+                    ? "Processing checkout…"
+                    : pending
+                      ? "Retry same checkout"
+                      : "Place simulated order"}
                 <span aria-hidden="true">→</span>
               </button>
             </form>
           </div>
         </section>
         {result && <OrderResult result={result} recovered={recovered} />}
+        {events && <Reporting refreshKey={result?.status ?? ""} />}
         <OrderHistory
           orders={orders}
           controls={
@@ -488,9 +545,11 @@ export default function App() {
           </span>
         </a>
         <p>
-          {distributed
-            ? "Phase 3 · independent services and durable recovery."
-            : "Phase 2 · bounded imports and indexed read paths."}
+          {events
+            ? "Phase 4 · transactional events and autonomous recovery."
+            : distributed
+              ? "Phase 3 · independent services and durable recovery."
+              : "Phase 2 · bounded imports and indexed read paths."}
           <br />
           Architecture is a set of decisions you can explain and prove.
         </p>

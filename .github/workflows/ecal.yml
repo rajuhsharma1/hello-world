@@ -42,3 +42,21 @@ jobs:
         run: docker compose -f ecal/compose.phase3.yaml logs --no-color --tail=120
       - if: always()
         run: docker compose -f ecal/compose.phase3.yaml down
+
+  events:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24.19.0', cache: npm, cache-dependency-path: ecal/frontend/package-lock.json}
+      - run: npm ci --prefix ecal/frontend
+      - run: npx --prefix ecal/frontend playwright install --with-deps chromium
+      - run: docker compose -f ecal/compose.phase4.yaml build
+      - run: docker builder prune -f
+      - run: docker compose -f ecal/compose.phase4.yaml -f ecal/compose.phase4.compact.yaml up -d --no-build --wait --wait-timeout 240
+      - run: make -C ecal phase4-e2e
+      - run: python3 ecal/scripts/phase4_failure_lab.py --compact
+      - if: failure()
+        run: docker compose -f ecal/compose.phase4.yaml logs --no-color --tail=120
+      - if: always()
+        run: docker compose -f ecal/compose.phase4.yaml -f ecal/compose.phase4.compact.yaml down

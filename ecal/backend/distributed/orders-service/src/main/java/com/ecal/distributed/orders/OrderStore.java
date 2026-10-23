@@ -107,6 +107,7 @@ public class OrderStore {
 
   @Transactional(timeout = 5, isolation = Isolation.READ_COMMITTED)
   public Claim claim(UUID key, Command command) {
+    com.ecal.distributed.support.EventContext.attach(db);
     var prior = db.query(
       "select * from purchase_order where buyer_id=? and idempotency_key=?",
       this::map,
@@ -191,6 +192,7 @@ public class OrderStore {
     String next,
     String payment
   ) {
+    com.ecal.distributed.support.EventContext.attach(db);
     if (
       !OrderState.valueOf(expected).allows(OrderState.valueOf(next))
     ) throw new IllegalStateException("Illegal workflow transition.");

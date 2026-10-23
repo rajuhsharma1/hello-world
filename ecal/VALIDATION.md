@@ -1,6 +1,30 @@
-# Observed validation — Phase 3 (with retained Phase 1/2 baselines)
+# Observed validation — Phase 4 (with retained earlier baselines)
 
-Latest Phase 3 validation: 23 October 2026 in the provided Linux cloud workspace. Earlier Phase 1/2 observations from 22 October are retained below. These are observations, not production readiness or achieved NFR/SLA targets.
+Latest Phase 4 validation: 23 October 2026 in the provided Linux cloud workspace. Earlier Phase 1/2 and Phase 3 observations are retained below. These are observations, not production readiness or achieved NFR/SLA targets.
+
+
+## Phase 4 observations — 23 October 2026
+
+The event-driven slice was built and exercised in this Linux cloud workspace. Earlier observations below are retained as historical evidence, not silently promoted to claims about the new topology.
+
+| Check | Observed outcome | Practical limit |
+|---|---|---|
+| Distributed reactor `mvn verify` | **34 checks passed, none skipped**: 6 pure/architecture/structural contract checks, 18 synchronous HTTP/PostgreSQL scenarios, 10 event workflow scenarios. The final tombstone change was followed by another passing run of the 6 checks and 10 event scenarios | Disposable test databases use separate ordinary roles on one PostgreSQL 17.6 process; real Kafka 3.9.1 runs in its own Testcontainer |
+| Durable acceptance and outbox | 202 acknowledgement precedes any reservation; duplicate POST returns the same order with one creation event; outbox insertion failure rolls back the order | The duplicate POST check is sequential; the after-trigger rule prevents losing inserts from publishing phantom rows by PostgreSQL semantics, not a claimed deterministic concurrent-event test |
+| Delivery crash windows | Real broker acceptance followed by injected relay failure leaves the publish marker pending; re-publication produces one business effect. Consumer handler commit followed by injected acknowledgement failure replays safely | Consumer crash is injected exactly at acknowledgement, not an OS process-kill experiment; no Kafka/PostgreSQL exactly-once transaction claim |
+| Autonomous recovery | Payment owner outage recovers to compensated cancellation without caller replay; Orders restart recovers committed acceptance; actual broker pause leaves an unpublished event and recovers after unpause | Schedulers are manually controlled in integration tests; the separate live exercise verifies continuously scheduled workers |
+| Poison and ordering | Malformed JSON, unsupported schema and null Kafka tombstones are quarantined; a later compatible envelope succeeds. Newer reporting snapshot followed by an older/additive snapshot does not regress; handler failure rolls back inbox | Snapshot version handling is not a financial-delta ledger; no bulk replay UI or schema registry is claimed |
+| Frontend | **17 React tests passed**; production TypeScript/Vite build passed in `events` mode and the web image built | Acceptance retains the operation identity; GET outage or mismatched polled snapshot cannot clear it |
+| Browser | **4 Chromium scenarios passed** on final images: approval/decline/history, mobile keyboard/no overflow, lost-response/reload/same-key replay, page-close autonomous completion with eventual reports. Two scenarios intentionally skipped because they belong to monolith CSV import and the Phase 3-specific UI | Finite local browser coverage; no authenticated cross-user or load qualification |
+| Live outage exercise | Payment and Reporting stopped; order accepted and observed in `PAYMENT_UNKNOWN`; Payment restored and GET-only observation reached `CONFIRMED`; exactly one order/reservation/payment and one stock decrement; Reporting caught up **through the public proxy URL** | Adds a real simulated order; other clients must be idle; recovery receipt saved before POST and retained |
+| Runtime topology | All five application images built; **seven compact-stack containers healthy** with only browser loopback **8095** published. Full stack stopped/restarted with prior database/event data retained. Default, compact and IntelliJ/dev Compose configurations validate | Default eleven-container/four-PostgreSQL-instance topology is configuration-validated here; the cloud runtime uses four databases in one instance to fit disk. Hosted CI is configured but no remote CI outcome is asserted |
+| Logical ownership and wire format | Runtime Orders/Inventory/Payment/Reporting roles are non-superusers; Inventory, Payment and Reporting lack CONNECT to Orders. Integration negative connection test passed. A broker record showed schema 1, ISO occurrence text and string money | Compact mode shares a physical process/failure domain; Kafka has no TLS/ACLs in this local lab |
+| Broker restart/lag | Persistent Kafka restarted; both groups resumed retained offsets. CLI reported zero lag on populated partitions; unused partitions had log end 0 and no committed offset | Idle observation only; UI projection timestamp is explicitly not a broker lag metric or achieved SLO |
+| Documentation/configuration | HLD, LLD, ADR 021, wire/API contracts, Windows/IntelliJ guide, traceability and configuration updated; local links resolve; shell syntax, YAML/config checks and `git diff --check` passed | Mentoring material documents tradeoffs and limits, not legal/employer/production certification |
+
+Validation exposed and corrected three operational cases: temporary disk exhaustion from concurrent old stacks and build layers (old ECAL containers stopped with volumes retained; disposable cache removed), Nginx retaining an old Reporting container IP after stop/start (Docker DNS refresh plus public-route recovery assertion), and a workspace Docker client proxy returning 403 for loopback health checks (explicit proxy bypass). A null Kafka value initially could not fit the quarantine NOT NULL column; it now has an explicit tombstone marker and a passing regression check.
+
+Phase 3 and monolith data volumes remain intact; their containers were stopped to fit the cloud disk budget. The Ark application's code, containers and data were not changed. No live dataset was automatically migrated. Authentication, exported OpenTelemetry spans, replicated Kafka durability, archival, production replay/capacity and cloud deployment remain outside this slice. The async 202 behavior requires its paired UI or an explicitly compatible client.
 
 ## Phase 3 observations — 23 October 2026
 

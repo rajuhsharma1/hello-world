@@ -76,7 +76,9 @@ test("a committed checkout with a lost response survives reload and replays one 
     if (!dropped) {
       // Let the real backend commit, then drop only its response to reproduce the dangerous gap.
       const response = await route.fetch();
-      expect(response.status()).toBe(201);
+      expect(response.status()).toBe(
+        process.env.ECAL_MODE === "events" ? 202 : 201,
+      );
       committedId = (await response.json()).id;
       dropped = true;
       return route.abort("failed");
@@ -115,7 +117,7 @@ test("operator uploads real CSV, pages products, replays safely and filters hist
   page,
 }) => {
   test.skip(
-    process.env.ECAL_MODE === "distributed",
+    ["distributed", "events"].includes(process.env.ECAL_MODE ?? ""),
     "CSV import is a Phase 2 local-transaction feature.",
   );
   const { randomUUID } = await import("node:crypto");

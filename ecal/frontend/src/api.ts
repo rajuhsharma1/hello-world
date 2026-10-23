@@ -106,7 +106,19 @@ export interface ImportResult {
     error: string | null;
   }[];
 }
+export interface ReportSummary {
+  consistency: string;
+  observedAt: string;
+  lastProjectedAt: string | null;
+  quarantinedEvents: number;
+  totals: { status: string; orders: number; amount: string }[];
+  monthlyRevenue: { month: string; revenue: string }[];
+  freshnessNote: string;
+}
+export const terminalOrder = (o: Order) =>
+  ["CONFIRMED", "CANCELLED", "REJECTED"].includes(o.status);
 export const api = {
+  report: () => request<ReportSummary>("/api/v1/reports/summary"),
   productsPage: (cursor: string | null) =>
     request<Page<Product>>(
       "/api/catalog/products/page?limit=20" +
@@ -131,6 +143,12 @@ export const api = {
   orders: () => request<Order[]>("/api/orders"),
   order: (id: string) =>
     request<Order>(`/api/orders/${encodeURIComponent(id)}`),
+  observe: async (id: string, pending: PendingCheckout): Promise<Order> => {
+    const order = await request<Order>(`/api/orders/${encodeURIComponent(id)}`);
+    if (order.id !== id) throw new Error("Order read identity mismatch");
+    verifyCheckout(order, pending);
+    return order;
+  },
   checkout: async (pending: PendingCheckout): Promise<Order> => {
     const order = await request<Order>("/api/orders", {
       method: "POST",
@@ -140,31 +158,49 @@ export const api = {
       },
       body: JSON.stringify(pending.command),
     });
-    // HTTP 2xx alone is not an acknowledgement: retain the key if an intermediary returns bad JSON.
-    const approved = pending.command.paymentOutcome === "APPROVE";
-    if (
-      !order ||
-      !uuid.test(order.id ?? "") ||
-      order.productId !== pending.command.productId ||
-      order.quantity !== pending.command.quantity ||
-      typeof order.productName !== "string" ||
-      !order.productName.trim() ||
-      order.currency !== "INR" ||
-      typeof order.unitPrice !== "string" ||
-      !/^\d+\.\d{2}$/.test(order.unitPrice) ||
-      typeof order.totalAmount !== "string" ||
-      !/^\d+\.\d{2}$/.test(order.totalAmount) ||
-      Number.isNaN(Date.parse(order.createdAt)) ||
-      order.status !== (approved ? "CONFIRMED" : "CANCELLED") ||
-      order.paymentStatus !== (approved ? "AUTHORIZED" : "DECLINED")
-    ) {
-      throw new Error(
-        "The checkout acknowledgement was incomplete or did not match this request.",
-      );
-    }
+    verifyCheckout(order, pending);
     return order;
   },
 };
+
+function verifyCheckout(order: Order, pending: PendingCheckout): void {
+  // HTTP 2xx alone is not an acknowledgement: retain the key if an intermediary returns bad JSON.
+  const approved = pending.command.paymentOutcome === "APPROVE";
+  if (
+    !order ||
+    !uuid.test(order.id ?? "") ||
+    order.productId !== pending.command.productId ||
+    order.quantity !== pending.command.quantity ||
+    typeof order.productName !== "string" ||
+    !order.productName.trim() ||
+    order.currency !== "INR" ||
+    typeof order.unitPrice !== "string" ||
+    !/^\d+\.\d{2}$/.test(order.unitPrice) ||
+    typeof order.totalAmount !== "string" ||
+    !/^\d+\.\d{2}$/.test(order.totalAmount) ||
+    Number.isNaN(Date.parse(order.createdAt)) ||
+    (import.meta.env.VITE_ECAL_MODE === "events"
+      ? ![
+          "PENDING",
+          "RESERVED",
+          "PAYMENT_UNKNOWN",
+          "RELEASE_PENDING",
+          "CONFIRMED",
+          "CANCELLED",
+          "REJECTED",
+        ].includes(order.status) ||
+        (order.status === "CONFIRMED" &&
+          (!approved || order.paymentStatus !== "AUTHORIZED")) ||
+        (order.status === "CANCELLED" &&
+          (approved || order.paymentStatus !== "DECLINED"))
+      : order.status !== (approved ? "CONFIRMED" : "CANCELLED") ||
+        order.paymentStatus !== (approved ? "AUTHORIZED" : "DECLINED"))
+  ) {
+    throw new Error(
+      "The checkout acknowledgement was incomplete or did not match this request.",
+    );
+  }
+}
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const storageKey = "ecal.pendingCheckout.v1";

@@ -52,3 +52,15 @@ phase3-e2e:
 	ECAL_MODE=distributed ECAL_WEB_URL=$${ECAL_WEB_URL:-http://127.0.0.1:8091} $(NPM) run test:e2e --prefix frontend
 phase3-failure-lab:
 	python3 scripts/phase3_failure_lab.py
+
+.PHONY: phase4-up phase4-down phase4-logs phase4-e2e phase4-failure-lab
+phase4-up:
+	$(DOCKER) compose -f compose.phase4.yaml up --build --wait --wait-timeout 240
+phase4-down:
+	$(DOCKER) compose -f compose.phase4.yaml down
+phase4-logs:
+	$(DOCKER) compose -f compose.phase4.yaml logs -f --tail=80 api inventory payment reporting
+phase4-e2e:
+	ECAL_MODE=events ECAL_WEB_URL=$${ECAL_WEB_URL:-http://127.0.0.1:8095} $(NPM) run test:e2e --prefix frontend
+phase4-failure-lab:
+	python3 scripts/phase4_failure_lab.py

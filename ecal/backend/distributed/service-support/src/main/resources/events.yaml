@@ -1,0 +1,26 @@
+ecal:
+  events-enabled: ${ECAL_EVENTS_ENABLED:false}
+spring:
+  kafka:
+    bootstrap-servers: ${ECAL_KAFKA_BOOTSTRAP:127.0.0.1:9092}
+    admin:
+      fail-fast: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 5000
+        request.timeout.ms: 2000
+        max.block.ms: 3000
+    consumer:
+      group-id: ${ECAL_EVENT_GROUP:orders-saga-v1}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.records: 50
+    listener:
+      ack-mode: manual_immediate

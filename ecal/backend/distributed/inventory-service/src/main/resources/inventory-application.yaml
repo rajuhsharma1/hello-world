@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: classpath:events.yaml
   application:
     name: ecal-inventory
   datasource:
@@ -9,7 +11,7 @@ spring:
       maximum-pool-size: 12
       connection-timeout: 2000
   flyway:
-    locations: classpath:db/inventory
+    locations: ${ECAL_FLYWAY_LOCATIONS:classpath:db/inventory}
   jackson:
     deserialization:
       fail-on-unknown-properties: true
